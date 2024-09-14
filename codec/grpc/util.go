@@ -27,8 +27,6 @@ func decode(r io.Reader) (uint8, []byte, error) {
 	// get message length
 	length := binary.BigEndian.Uint32(header[1:])
 
-	logger.Errorf("=== Decode: length: %d %T %s", length, r, string(debug.Stack()))
-
 	// no encoding format
 	if length == 0 {
 		return cf, nil, nil
@@ -38,7 +36,8 @@ func decode(r io.Reader) (uint8, []byte, error) {
 		return cf, nil, fmt.Errorf("grpc: received message larger than max length allowed on current machine (%d vs. %d) %s", length, maxInt, string(debug.Stack()))
 	}
 	if int(length) > MaxMessageSize {
-		return cf, nil, fmt.Errorf("grpc: received message larger than max (%d vs. %d) %s", length, MaxMessageSize, string(debug.Stack()))
+		logger.Errorf("=== Decode: length: %d %T %s", length, r, string(debug.Stack()))
+		return cf, nil, fmt.Errorf("grpc: received message larger than max (%d vs. %d)", length, MaxMessageSize)
 	}
 
 	msg := make([]byte, int(length))
