@@ -130,6 +130,7 @@ func (r *rpcClient) call(
 		reqCodec, err = r.newCodec(req.ContentType())
 
 		if err != nil {
+			logger.Log(log.ErrorLevel, "failed to create codec: %v ContentType:%v", err, req.ContentType())
 			return merrors.InternalServerError("go.micro.client", err.Error())
 		}
 	}
@@ -148,8 +149,10 @@ func (r *rpcClient) call(
 
 	c, err := r.pool.Get(address, dOpts...)
 	if err != nil {
+		logger.Log(log.ErrorLevel, "connection error %v ContentType:%v address:%s", err, address)
 		return merrors.InternalServerError("go.micro.client", "connection error: %v", err)
 	}
+	logger.Log(log.DebugLevel, "reqCodec %v", reqCodec)
 
 	seq := atomic.AddUint64(&r.seq, 1) - 1
 	codec := newRPCCodec(msg, c, reqCodec, "")
@@ -190,18 +193,23 @@ func (r *rpcClient) call(
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				ch <- merrors.InternalServerError("go.micro.client", "panic recovered: %v", r)
+				ch <- merrors.InternalServerError("go.micro.client", "codec[%s] panic recovered: %v", codec.String(), r)
 			}
 		}()
 
+		logger.Log(log.DebugLevel, "send stream %T", req.Body())
 		// send request
 		if err := stream.Send(req.Body()); err != nil {
+			logger.Log(log.ErrorLevel, "failed to send stream", err)
 			ch <- err
 			return
 		}
 
+		logger.Log(log.DebugLevel, "recv stream %T", resp)
 		// recv response
 		if err := stream.Recv(resp); err != nil {
+			logger.Log(log.ErrorLevel, "failed to recv stream", err)
+
 			ch <- err
 			return
 		}

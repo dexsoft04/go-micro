@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	errs "errors"
+	"go-micro.dev/v5/logger"
 
 	"go-micro.dev/v5/codec"
 	raw "go-micro.dev/v5/codec/bytes"
@@ -135,6 +136,10 @@ func setHeaders(m *codec.Message, stream string) {
 
 // setupProtocol sets up the old protocol.
 func setupProtocol(msg *transport.Message, node *registry.Node) codec.NewCodec {
+
+	for k, v := range node.Metadata {
+		logger.Debugf("setupProtocol node.metadata[%q] = %q", k, v)
+	}
 	protocol := node.Metadata["protocol"]
 
 	// got protocol
