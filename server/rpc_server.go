@@ -542,7 +542,7 @@ func (s *rpcServer) Start() error {
 		return err
 	}
 
-	logger.Logf(log.InfoLevel, "Transport [%s] Listening on %s", config.Transport.String(), listener.Addr())
+	logger.Logf(log.InfoLevel, "Transport %T [%s] Listening on %s", config.Transport, config.Transport.String(), listener.Addr())
 
 	// swap address
 	addr := s.swapAddr(config, listener.Addr())

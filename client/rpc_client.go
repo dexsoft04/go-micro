@@ -49,6 +49,7 @@ func newRPCClient(opt ...Option) Client {
 		pool.Transport(opts.Transport),
 	)
 
+	log.Debugf("newRPCClient opts.Transport %T", opts.Transport)
 	rc := &rpcClient{
 		opts: opts,
 		pool: p,
@@ -134,7 +135,7 @@ func (r *rpcClient) call(
 			logger.Log(log.ErrorLevel, "failed to create codec: %v ContentType:%v", err, req.ContentType())
 			return merrors.InternalServerError("go.micro.client", err.Error())
 		}
-		logger.Log(log.DebugLevel, "create codec: reqCodec:%T ContentType:%v", reqCodec, req.ContentType())
+		logger.Logf(log.DebugLevel, "create codec: reqCodec:%T ContentType:%v", reqCodec, req.ContentType())
 
 	}
 

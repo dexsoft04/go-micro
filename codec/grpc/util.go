@@ -31,7 +31,7 @@ func decode(r io.Reader) (uint8, []byte, error) {
 	if length == 0 {
 		return cf, nil, nil
 	}
-	logger.Debugf("Decode: length: %d %T", length, r)
+	logger.Errorf("Decode: length: %d %T", length, r)
 	//
 	if int64(length) > int64(maxInt) {
 		return cf, nil, fmt.Errorf("grpc: received message larger than max length allowed on current machine (%d vs. %d) %s", length, maxInt, string(debug.Stack()))

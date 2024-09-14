@@ -53,6 +53,7 @@ func (c *Codec) ReadBody(b interface{}) error {
 	if b == nil {
 		return nil
 	}
+	logger.Infof("ReadBody decode request: c.Conn:%T %s", c.Conn, string(debug.Stack()))
 
 	_, buf, err := decode(c.Conn)
 	if err != nil {
