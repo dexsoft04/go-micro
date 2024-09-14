@@ -3,6 +3,7 @@ package grpc
 import (
 	"encoding/binary"
 	"fmt"
+	"go-micro.dev/v5/logger"
 	"io"
 )
 
@@ -44,6 +45,7 @@ func decode(r io.Reader) (uint8, []byte, error) {
 		if err == io.EOF {
 			err = io.ErrUnexpectedEOF
 		}
+		logger.Errorf("Failed to read request: %v", err)
 		return cf, nil, err
 	}
 
@@ -61,10 +63,14 @@ func encode(cf uint8, buf []byte, w io.Writer) error {
 
 	// read the header
 	if _, err := w.Write(header); err != nil {
+		logger.Errorf("Failed to encode request: %v", err)
 		return err
 	}
 
 	// write the buffer
 	_, err := w.Write(buf)
+	if nil != err {
+		logger.Errorf("Failed to encode request: %v", err)
+	}
 	return err
 }

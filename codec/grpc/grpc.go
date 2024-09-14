@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go-micro.dev/v5/logger"
 	"io"
 	"strings"
 
@@ -54,6 +55,7 @@ func (c *Codec) ReadBody(b interface{}) error {
 
 	_, buf, err := decode(c.Conn)
 	if err != nil {
+		logger.Errorf("Failed to decode request: %v", err)
 		return err
 	}
 
@@ -61,6 +63,8 @@ func (c *Codec) ReadBody(b interface{}) error {
 	case "application/grpc+json":
 		return json.Unmarshal(buf, b)
 	case "application/grpc+proto", "application/grpc":
+
+		logger.Debugf("c.ContentType %T", b)
 		return proto.Unmarshal(buf, b.(proto.Message))
 	}
 
@@ -124,6 +128,8 @@ func (c *Codec) Write(m *codec.Message, b interface{}) error {
 	if err != nil {
 		m.Header["grpc-status"] = "8"
 		m.Header["grpc-message"] = err.Error()
+
+		logger.Errorf("Failed to encode request: %v", err)
 		return err
 	}
 
