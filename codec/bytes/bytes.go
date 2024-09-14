@@ -3,9 +3,10 @@ package bytes
 
 import (
 	"fmt"
-	"io"
-
 	"go-micro.dev/v5/codec"
+	"go-micro.dev/v5/logger"
+	"io"
+	"runtime/debug"
 )
 
 type Codec struct {
@@ -18,10 +19,14 @@ type Frame struct {
 }
 
 func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
+	logger.Debugf("ReadHeader m.Type:%v %s", m.Type, string(debug.Stack()))
+
 	return nil
 }
 
 func (c *Codec) ReadBody(b interface{}) error {
+	logger.Debugf("ReadBody m.Type:%T %s", b, string(debug.Stack()))
+
 	// read bytes
 	buf, err := io.ReadAll(c.Conn)
 	if err != nil {
@@ -41,6 +46,8 @@ func (c *Codec) ReadBody(b interface{}) error {
 }
 
 func (c *Codec) Write(m *codec.Message, b interface{}) error {
+	logger.Debugf("Write m.Type:%T %s", b, string(debug.Stack()))
+
 	var v []byte
 	switch vb := b.(type) {
 	case *Frame:

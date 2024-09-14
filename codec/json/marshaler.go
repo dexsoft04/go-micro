@@ -3,6 +3,8 @@ package json
 import (
 	"bytes"
 	"encoding/json"
+	"go-micro.dev/v5/logger"
+	"runtime/debug"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -17,6 +19,8 @@ var bufferPool = bpool.NewSizedBufferPool(16, 256)
 type Marshaler struct{}
 
 func (j Marshaler) Marshal(v interface{}) ([]byte, error) {
+	logger.Debugf("Marshal %T %s", v, string(debug.Stack()))
+
 	if pb, ok := v.(proto.Message); ok {
 		buf := bufferPool.Get()
 		defer bufferPool.Put(buf)
@@ -29,6 +33,7 @@ func (j Marshaler) Marshal(v interface{}) ([]byte, error) {
 }
 
 func (j Marshaler) Unmarshal(d []byte, v interface{}) error {
+	logger.Debugf("Unmarshal %T %s", v, string(debug.Stack()))
 	if pb, ok := v.(proto.Message); ok {
 		return jsonpb.Unmarshal(bytes.NewReader(d), pb)
 	}

@@ -4,7 +4,9 @@ package protorpc
 import (
 	"bytes"
 	"fmt"
+	"go-micro.dev/v5/logger"
 	"io"
+	"runtime/debug"
 	"strconv"
 	"sync"
 
@@ -42,6 +44,8 @@ func id(id string) uint64 {
 }
 
 func (c *protoCodec) Write(m *codec.Message, b interface{}) error {
+	logger.Debugf("Write %v %s", m.Header, string(debug.Stack()))
+
 	switch m.Type {
 	case codec.Request:
 		c.Lock()
@@ -122,6 +126,7 @@ func (c *protoCodec) Write(m *codec.Message, b interface{}) error {
 func (c *protoCodec) ReadHeader(m *codec.Message, mt codec.MessageType) error {
 	c.buf.Reset()
 	c.mt = mt
+	logger.Debugf("ReadHeader %v %s", m.Header, string(debug.Stack()))
 
 	switch mt {
 	case codec.Request:
@@ -159,6 +164,8 @@ func (c *protoCodec) ReadHeader(m *codec.Message, mt codec.MessageType) error {
 }
 
 func (c *protoCodec) ReadBody(b interface{}) error {
+	logger.Debugf("ReadBody %T %s", b, string(debug.Stack()))
+
 	var data []byte
 	switch c.mt {
 	case codec.Request, codec.Response:

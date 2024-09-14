@@ -21,6 +21,8 @@ type Codec struct {
 }
 
 func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
+	logger.Debugf("ReadHeader %v %s", m.Header, string(debug.Stack()))
+
 	if ct := m.Header["Content-Type"]; len(ct) > 0 {
 		c.ContentType = ct
 	}
@@ -49,6 +51,8 @@ func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
 }
 
 func (c *Codec) ReadBody(b interface{}) error {
+	logger.Debugf("ReadBody %T %s", b, string(debug.Stack()))
+
 	// no body
 	if b == nil {
 		return nil
@@ -74,6 +78,8 @@ func (c *Codec) ReadBody(b interface{}) error {
 }
 
 func (c *Codec) Write(m *codec.Message, b interface{}) error {
+	logger.Debugf("Write %v %s", m, string(debug.Stack()))
+
 	var buf []byte
 	var err error
 

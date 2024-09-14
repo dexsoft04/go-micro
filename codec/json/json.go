@@ -3,6 +3,7 @@ package json
 
 import (
 	"encoding/json"
+	"go-micro.dev/v5/logger"
 	"io"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -24,6 +25,7 @@ func (c *Codec) ReadBody(b interface{}) error {
 	if b == nil {
 		return nil
 	}
+	logger.Debugf("ReadBody %+v", b)
 	if pb, ok := b.(proto.Message); ok {
 		return jsonpb.UnmarshalNext(c.Decoder, pb)
 	}
@@ -34,6 +36,7 @@ func (c *Codec) Write(m *codec.Message, b interface{}) error {
 	if b == nil {
 		return nil
 	}
+	logger.Debugf("Write %+v", b)
 	return c.Encoder.Encode(b)
 }
 

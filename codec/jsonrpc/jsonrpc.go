@@ -5,7 +5,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"go-micro.dev/v5/logger"
 	"io"
+	"runtime/debug"
 
 	"go-micro.dev/v5/codec"
 )
@@ -28,6 +30,8 @@ func (j *jsonCodec) String() string {
 }
 
 func (j *jsonCodec) Write(m *codec.Message, b interface{}) error {
+	logger.Debugf("Write %v %s", m.Header, string(debug.Stack()))
+
 	switch m.Type {
 	case codec.Request:
 		return j.c.Write(m, b)
@@ -46,6 +50,8 @@ func (j *jsonCodec) Write(m *codec.Message, b interface{}) error {
 }
 
 func (j *jsonCodec) ReadHeader(m *codec.Message, mt codec.MessageType) error {
+	logger.Debugf("ReadHeader %v %s", m, string(debug.Stack()))
+
 	j.buf.Reset()
 	j.mt = mt
 
@@ -63,6 +69,8 @@ func (j *jsonCodec) ReadHeader(m *codec.Message, mt codec.MessageType) error {
 }
 
 func (j *jsonCodec) ReadBody(b interface{}) error {
+	logger.Debugf("ReadBody %T %s", b, string(debug.Stack()))
+
 	switch j.mt {
 	case codec.Request:
 		return j.s.ReadBody(b)
