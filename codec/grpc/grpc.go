@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"go-micro.dev/v5/logger"
 	"io"
+	"runtime/debug"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
@@ -64,7 +65,7 @@ func (c *Codec) ReadBody(b interface{}) error {
 		return json.Unmarshal(buf, b)
 	case "application/grpc+proto", "application/grpc":
 
-		logger.Debugf("c.ContentType %T", b)
+		logger.Debugf("c.ContentType %T %s", b, string(debug.Stack()))
 		return proto.Unmarshal(buf, b.(proto.Message))
 	}
 
@@ -120,6 +121,8 @@ func (c *Codec) Write(m *codec.Message, b interface{}) error {
 		pb, ok := b.(proto.Message)
 		if ok {
 			buf, err = proto.Marshal(pb)
+		} else {
+			logger.Errorf("Failed to encode response message: %T %s", b, string(debug.Stack()))
 		}
 	default:
 		err = errors.New("Unsupported Content-Type")
