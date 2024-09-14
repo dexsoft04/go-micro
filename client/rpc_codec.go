@@ -197,7 +197,7 @@ func (c *rpcCodec) Write(message *codec.Message, body interface{}) error {
 		} else {
 			// write to codec
 			if err := c.codec.Write(message, body); err != nil {
-				return errors.InternalServerError("go.micro.client.codec", err.Error())
+				return errors.InternalServerError("go.micro.client.codec 0000", "%s c.codec[%s]", err.Error(), c.codec.String())
 			}
 			// set body
 			message.Body = c.buf.wbuf.Bytes()
@@ -240,7 +240,7 @@ func (c *rpcCodec) ReadHeader(msg *codec.Message, r codec.MessageType) error {
 
 	// return header error
 	if err != nil {
-		return errors.InternalServerError("go.micro.client.codec", err.Error())
+		return errors.InternalServerError("go.micro.client.codec 1111", "%s c.codec[%s]", err.Error(), c.codec.String())
 	}
 
 	return nil
@@ -255,7 +255,7 @@ func (c *rpcCodec) ReadBody(b interface{}) error {
 	}
 
 	if err := c.codec.ReadBody(b); err != nil {
-		return errors.InternalServerError("go.micro.client.codec", err.Error())
+		return errors.InternalServerError("go.micro.client.codec 22222", "%s c.codec[%s]", err.Error(), c.codec.String())
 	}
 
 	return nil
