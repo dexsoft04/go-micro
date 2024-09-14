@@ -134,6 +134,8 @@ func (r *rpcClient) call(
 			logger.Log(log.ErrorLevel, "failed to create codec: %v ContentType:%v", err, req.ContentType())
 			return merrors.InternalServerError("go.micro.client", err.Error())
 		}
+		logger.Log(log.DebugLevel, "create codec: reqCodec:%T ContentType:%v", reqCodec, req.ContentType())
+
 	}
 
 	dOpts := []transport.DialOption{
@@ -153,7 +155,7 @@ func (r *rpcClient) call(
 		logger.Log(log.ErrorLevel, "connection error %v ContentType:%v address:%s", err, address)
 		return merrors.InternalServerError("go.micro.client", "connection error: %v", err)
 	}
-	logger.Log(log.DebugLevel, "reqCodec %v", reqCodec)
+	logger.Log(log.DebugLevel, "reqCodec %T", reqCodec)
 
 	seq := atomic.AddUint64(&r.seq, 1) - 1
 	codec := newRPCCodec(msg, c, reqCodec, "")

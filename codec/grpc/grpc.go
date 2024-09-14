@@ -56,7 +56,7 @@ func (c *Codec) ReadBody(b interface{}) error {
 
 	_, buf, err := decode(c.Conn)
 	if err != nil {
-		logger.Errorf("Failed to decode request: %v %s", err, string(debug.Stack()))
+		logger.Errorf("Failed to decode request: %v c.Conn:%T %s", err, c.Conn, string(debug.Stack()))
 		return err
 	}
 

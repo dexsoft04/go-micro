@@ -259,6 +259,7 @@ func (c *rpcCodec) ReadBody(b interface{}) error {
 		return nil
 	}
 
+	logger.Debugf("rpcCodec ReadBody %T", c.codec)
 	if err := c.codec.ReadBody(b); err != nil {
 		return errors.InternalServerError("go.micro.client.codec 22222", "%s c.codec[%s]", err.Error(), c.codec.String())
 	}
