@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -197,7 +198,7 @@ func (r *rpcClient) call(
 			}
 		}()
 
-		logger.Log(log.DebugLevel, "send stream %T", req.Body())
+		logger.Logf(log.DebugLevel, "send stream %T", req.Body())
 		// send request
 		if err := stream.Send(req.Body()); err != nil {
 			logger.Log(log.ErrorLevel, "failed to send stream", err)
@@ -205,10 +206,10 @@ func (r *rpcClient) call(
 			return
 		}
 
-		logger.Log(log.DebugLevel, "recv stream %T", resp)
+		logger.Logf(log.DebugLevel, "recv stream %T stream:%T", resp, stream)
 		// recv response
 		if err := stream.Recv(resp); err != nil {
-			logger.Log(log.ErrorLevel, "failed to recv stream", err)
+			logger.Logf(log.ErrorLevel, "failed to recv stream %v %s", err, string(debug.Stack()))
 
 			ch <- err
 			return

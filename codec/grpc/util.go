@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-micro.dev/v5/logger"
 	"io"
+	"runtime/debug"
 )
 
 var (
@@ -33,10 +34,10 @@ func decode(r io.Reader) (uint8, []byte, error) {
 
 	//
 	if int64(length) > int64(maxInt) {
-		return cf, nil, fmt.Errorf("grpc: received message larger than max length allowed on current machine (%d vs. %d)", length, maxInt)
+		return cf, nil, fmt.Errorf("grpc: received message larger than max length allowed on current machine (%d vs. %d) %s", length, maxInt, string(debug.Stack()))
 	}
 	if int(length) > MaxMessageSize {
-		return cf, nil, fmt.Errorf("grpc: received message larger than max (%d vs. %d)", length, MaxMessageSize)
+		return cf, nil, fmt.Errorf("grpc: received message larger than max (%d vs. %d) %s", length, MaxMessageSiz, string(debug.Stack()))
 	}
 
 	msg := make([]byte, int(length))
