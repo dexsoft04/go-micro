@@ -157,7 +157,7 @@ func (r *rpcClient) call(
 
 	seq := atomic.AddUint64(&r.seq, 1) - 1
 	codec := newRPCCodec(msg, c, reqCodec, "")
-
+	logger.Logf(log.DebugLevel, "newRPCCodec reqCodec:%T codec:%T", reqCodec, codec)
 	rsp := &rpcResponse{
 		socket: c,
 		codec:  codec,
