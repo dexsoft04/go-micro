@@ -27,11 +27,12 @@ func decode(r io.Reader) (uint8, []byte, error) {
 	// get message length
 	length := binary.BigEndian.Uint32(header[1:])
 
+	logger.Errorf("=== Decode: length: %d %T %s", length, r, string(debug.Stack()))
+
 	// no encoding format
 	if length == 0 {
 		return cf, nil, nil
 	}
-	logger.Errorf("Decode: length: %d %T", length, r)
 	//
 	if int64(length) > int64(maxInt) {
 		return cf, nil, fmt.Errorf("grpc: received message larger than max length allowed on current machine (%d vs. %d) %s", length, maxInt, string(debug.Stack()))
@@ -58,7 +59,7 @@ func encode(cf uint8, buf []byte, w io.Writer) error {
 
 	// set compression
 	header[0] = byte(cf)
-
+	logger.Debugf("=== Encode: length: %v %s", uint32(len(buf)), string(debug.Stack()))
 	// write length as header
 	binary.BigEndian.PutUint32(header[1:], uint32(len(buf)))
 
@@ -71,7 +72,7 @@ func encode(cf uint8, buf []byte, w io.Writer) error {
 	// write the buffer
 	_, err := w.Write(buf)
 	if nil != err {
-		logger.Errorf("Failed to encode request: %v", err)
+		logger.Errorf("Failed to encode request: %v %s", err, string(debug.Stack()))
 	}
 	return err
 }
