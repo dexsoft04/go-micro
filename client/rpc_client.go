@@ -156,7 +156,7 @@ func (r *rpcClient) call(
 		logger.Log(log.ErrorLevel, "connection error %v ContentType:%v address:%s", err, address)
 		return merrors.InternalServerError("go.micro.client", "connection error: %v", err)
 	}
-	logger.Log(log.DebugLevel, "reqCodec %T", reqCodec)
+	logger.Logf(log.DebugLevel, "reqCodec %T", reqCodec)
 
 	seq := atomic.AddUint64(&r.seq, 1) - 1
 	codec := newRPCCodec(msg, c, reqCodec, "")
@@ -210,6 +210,7 @@ func (r *rpcClient) call(
 		} else {
 			logger.Logf(log.ErrorLevel, "send stream req is nil %v", req)
 		}
+
 		// send request
 		if err := stream.Send(req.Body()); err != nil {
 			logger.Log(log.ErrorLevel, "failed to send stream", err)

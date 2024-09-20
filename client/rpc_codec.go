@@ -197,8 +197,13 @@ func (c *rpcCodec) Write(message *codec.Message, body interface{}) error {
 	// if body is bytes Frame don't encode
 	if body != nil {
 		if b, ok := body.(*raw.Frame); ok {
+			if b.Data == nil {
+				logger.Debugf("=== nil data")
+				b.Data = make([]byte, 0)
+			}
 			// set body
 			message.Body = b.Data
+
 		} else {
 			// write to codec
 			if err := c.codec.Write(message, body); err != nil {
