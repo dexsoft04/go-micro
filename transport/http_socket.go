@@ -3,6 +3,7 @@ package transport
 import (
 	"bufio"
 	"bytes"
+	"go-micro.dev/v5/logger"
 	"io"
 	"net"
 	"net/http"
@@ -45,6 +46,7 @@ func (h *httpTransportSocket) Remote() string {
 }
 
 func (h *httpTransportSocket) Recv(msg *Message) error {
+	logger.Debugf("httpTransportSocket Recv %s ct:%s", msg.Header["Micro-Endpoint"], msg.Header["Content-Type"])
 	if msg == nil {
 		return errors.New("message passed in is nil")
 	}

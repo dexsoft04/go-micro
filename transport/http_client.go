@@ -104,6 +104,8 @@ func (h *httpTransportClient) Send(m *Message) error {
 
 // Recv receives a message.
 func (h *httpTransportClient) Recv(msg *Message) (err error) {
+	log.Debugf("httpTransportSocket Recv %s ct:%s", msg.Header["Micro-Endpoint"], msg.Header["Content-Type"])
+
 	if msg == nil {
 		return errors.New("message passed in is nil")
 	}
