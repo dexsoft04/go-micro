@@ -191,8 +191,10 @@ func (c *rpcCodec) Write(message *codec.Message, body interface{}) error {
 		message.Header[k] = v
 	}
 
+	logger.Debugf("========")
 	// set the mucp headers
 	setHeaders(message, c.stream)
+	logger.Debugf("========")
 
 	// if body is bytes Frame don't encode
 	if body != nil {
@@ -203,8 +205,12 @@ func (c *rpcCodec) Write(message *codec.Message, body interface{}) error {
 			}
 			// set body
 			message.Body = b.Data
+			logger.Debugf("========")
 
 		} else {
+			logger.Debugf("======== %v", c.codec)
+			logger.Debugf("========  c.codec.String %v", c.codec.String())
+
 			// write to codec
 			if err := c.codec.Write(message, body); err != nil {
 				logger.Errorf("go.micro.client.codec 0000 %s c.codec[%v]", err.Error(), c.codec)
