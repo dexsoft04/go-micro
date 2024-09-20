@@ -207,6 +207,7 @@ func (c *rpcCodec) Write(message *codec.Message, body interface{}) error {
 		} else {
 			// write to codec
 			if err := c.codec.Write(message, body); err != nil {
+				logger.Errorf("go.micro.client.codec 0000 %s c.codec[%v]", err.Error(), c.codec)
 				return errors.InternalServerError("go.micro.client.codec 0000", "%s c.codec[%s]", err.Error(), c.codec.String())
 			}
 			// set body

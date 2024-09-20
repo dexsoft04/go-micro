@@ -2,6 +2,7 @@
 package proto
 
 import (
+	"go-micro.dev/v5/logger"
 	"io"
 
 	"github.com/golang/protobuf/proto"
@@ -32,6 +33,7 @@ func (c *Codec) ReadBody(b interface{}) error {
 }
 
 func (c *Codec) Write(m *codec.Message, b interface{}) error {
+	logger.Debugf("Write %s b:%T", m.Endpoint, b)
 	if b == nil {
 		// Nothing to write
 		return nil
