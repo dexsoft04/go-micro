@@ -19,7 +19,7 @@ type Codec struct {
 }
 
 func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
-	logger.Debugf("json ReadHeader %v %s", m.Type, string(debug.Stack()))
+	logger.Debugf("json ReadHeader %v t%v %s", m.Type, t, string(debug.Stack()))
 
 	return nil
 }
