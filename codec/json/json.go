@@ -25,10 +25,11 @@ func (c *Codec) ReadBody(b interface{}) error {
 	if b == nil {
 		return nil
 	}
-	logger.Debugf("ReadBody %+v", b)
 	if pb, ok := b.(proto.Message); ok {
+		logger.Debugf("jsonpb ReadBody %T", b)
 		return jsonpb.UnmarshalNext(c.Decoder, pb)
 	}
+	logger.Debugf("json ReadBody %T", b)
 	return c.Decoder.Decode(b)
 }
 
@@ -36,7 +37,7 @@ func (c *Codec) Write(m *codec.Message, b interface{}) error {
 	if b == nil {
 		return nil
 	}
-	logger.Debugf("Write %+v", b)
+	logger.Debugf("json Write %T", b)
 	return c.Encoder.Encode(b)
 }
 

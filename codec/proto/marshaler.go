@@ -16,7 +16,7 @@ var bufferPool = bpool.NewSizedBufferPool(16, 256)
 type Marshaler struct{}
 
 func (Marshaler) Marshal(v interface{}) ([]byte, error) {
-	logger.Debugf("Marshal %T %s", v, string(debug.Stack()))
+	logger.Debugf("proto Marshal %T %s", v, string(debug.Stack()))
 	pb, ok := v.(proto.Message)
 	if !ok {
 		return nil, codec.ErrInvalidMessage
@@ -37,7 +37,7 @@ func (Marshaler) Marshal(v interface{}) ([]byte, error) {
 }
 
 func (Marshaler) Unmarshal(data []byte, v interface{}) error {
-	logger.Debugf("Unmarshal %T %s", v, string(debug.Stack()))
+	logger.Debugf("proto Unmarshal %T %s", v, string(debug.Stack()))
 
 	pb, ok := v.(proto.Message)
 	if !ok {

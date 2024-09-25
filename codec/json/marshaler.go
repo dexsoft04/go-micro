@@ -19,9 +19,9 @@ var bufferPool = bpool.NewSizedBufferPool(16, 256)
 type Marshaler struct{}
 
 func (j Marshaler) Marshal(v interface{}) ([]byte, error) {
-	logger.Debugf("Marshal %T %s", v, string(debug.Stack()))
-
 	if pb, ok := v.(proto.Message); ok {
+		logger.Debugf("jsonpbMarshaler Marshal %T %s", v, string(debug.Stack()))
+
 		buf := bufferPool.Get()
 		defer bufferPool.Put(buf)
 		if err := jsonpbMarshaler.Marshal(buf, pb); err != nil {
@@ -29,14 +29,16 @@ func (j Marshaler) Marshal(v interface{}) ([]byte, error) {
 		}
 		return buf.Bytes(), nil
 	}
+	logger.Debugf("json Marshal %T %s", v, string(debug.Stack()))
 	return json.Marshal(v)
 }
 
 func (j Marshaler) Unmarshal(d []byte, v interface{}) error {
-	logger.Debugf("Unmarshal %T %s", v, string(debug.Stack()))
 	if pb, ok := v.(proto.Message); ok {
+		logger.Debugf("jsonpb Unmarshal %T %s", v, string(debug.Stack()))
 		return jsonpb.Unmarshal(bytes.NewReader(d), pb)
 	}
+	logger.Debugf("json Unmarshal %T %s", v, string(debug.Stack()))
 	return json.Unmarshal(d, v)
 }
 

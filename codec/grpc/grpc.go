@@ -21,7 +21,6 @@ type Codec struct {
 }
 
 func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
-	logger.Debugf("ReadHeader %v %s", m.Header, string(debug.Stack()))
 
 	if ct := m.Header["Content-Type"]; len(ct) > 0 {
 		c.ContentType = ct
@@ -30,6 +29,8 @@ func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
 	if ct := m.Header["content-type"]; len(ct) > 0 {
 		c.ContentType = ct
 	}
+
+	logger.Debugf("grpc ReadHeader ContentType:%v %s t:%v %s", m.Header["Content-Type"], c.ContentType, t, string(debug.Stack()))
 
 	// service method
 	path := m.Header[":path"]
@@ -51,35 +52,31 @@ func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
 }
 
 func (c *Codec) ReadBody(b interface{}) error {
-	logger.Debugf("ReadBody %T %s", b, string(debug.Stack()))
-
 	// no body
 	if b == nil {
+		logger.Debugf("grpc ReadHeader ContentType:%v nil b:%T %s", c.ContentType, b, string(debug.Stack()))
 		return nil
 	}
-	logger.Infof("ReadBody decode request: c.Conn:%T %s", c.Conn, string(debug.Stack()))
 
 	_, buf, err := decode(c.Conn)
 	if err != nil {
-		logger.Errorf("Failed to decode request: %v c.Conn:%T %s", err, c.Conn, string(debug.Stack()))
+		logger.Errorf("grpc Failed to decode request: %v c.Conn:%T %s", err, c.Conn, string(debug.Stack()))
 		return err
 	}
 
 	switch c.ContentType {
 	case "application/grpc+json":
+		logger.Debugf("grpc ReadHeader json ContentType:%v b:%T %s", c.ContentType, b, string(debug.Stack()))
 		return json.Unmarshal(buf, b)
 	case "application/grpc+proto", "application/grpc":
-
-		logger.Debugf("c.ContentType %T %s", b, string(debug.Stack()))
+		logger.Debugf("grpc ReadHeader proto ContentType:%v b:%T %s", c.ContentType, b, string(debug.Stack()))
 		return proto.Unmarshal(buf, b.(proto.Message))
 	}
-
+	logger.Debugf("grpc ReadHeader ContentType:%v Unsupported b:%T %s", c.ContentType, b, string(debug.Stack()))
 	return errors.New("Unsupported Content-Type")
 }
 
 func (c *Codec) Write(m *codec.Message, b interface{}) error {
-	logger.Debugf("Write %v %s", m, string(debug.Stack()))
-
 	var buf []byte
 	var err error
 
@@ -90,6 +87,7 @@ func (c *Codec) Write(m *codec.Message, b interface{}) error {
 	if ct := m.Header["content-type"]; len(ct) > 0 {
 		c.ContentType = ct
 	}
+	logger.Debugf("grpc Write ContentType:%v %s b:%T m.Type:%v %s", m.Header["Content-Type"], c.ContentType, b, m.Type, string(debug.Stack()))
 
 	switch m.Type {
 	case codec.Request:
@@ -139,7 +137,7 @@ func (c *Codec) Write(m *codec.Message, b interface{}) error {
 		m.Header["grpc-status"] = "8"
 		m.Header["grpc-message"] = err.Error()
 
-		logger.Errorf("Failed to encode request: %v", err)
+		logger.Errorf("grpc Failed to encode request: %v", err)
 		return err
 	}
 

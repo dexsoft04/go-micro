@@ -14,7 +14,7 @@ type Message struct {
 }
 
 func (n Marshaler) Marshal(v interface{}) ([]byte, error) {
-	logger.Debugf("Marshal %T %s", v, string(debug.Stack()))
+	logger.Debugf("bytes Marshal %T %s", v, string(debug.Stack()))
 
 	switch ve := v.(type) {
 	case *[]byte:
@@ -28,7 +28,7 @@ func (n Marshaler) Marshal(v interface{}) ([]byte, error) {
 }
 
 func (n Marshaler) Unmarshal(d []byte, v interface{}) error {
-	logger.Debugf("Unmarshal %T %s", v, string(debug.Stack()))
+	logger.Debugf("bytes Unmarshal %T %s", v, string(debug.Stack()))
 
 	switch ve := v.(type) {
 	case *[]byte:
