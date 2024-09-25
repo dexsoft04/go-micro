@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"go-micro.dev/v5/logger"
 	"io"
+	"runtime/debug"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -18,6 +19,8 @@ type Codec struct {
 }
 
 func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
+	logger.Debugf("json ReadHeader %v %s", m.Type, string(debug.Stack()))
+
 	return nil
 }
 
@@ -26,7 +29,7 @@ func (c *Codec) ReadBody(b interface{}) error {
 		return nil
 	}
 	if pb, ok := b.(proto.Message); ok {
-		logger.Debugf("jsonpb ReadBody %T", b)
+		logger.Debugf("jsonpb ReadBody %T %s", b, string(debug.Stack()))
 		return jsonpb.UnmarshalNext(c.Decoder, pb)
 	}
 	logger.Debugf("json ReadBody %T", b)
@@ -37,7 +40,13 @@ func (c *Codec) Write(m *codec.Message, b interface{}) error {
 	if b == nil {
 		return nil
 	}
-	logger.Debugf("json Write %T", b)
+
+	if jb, ok := b.(*json.RawMessage); ok {
+		xx, err := jb.MarshalJSON()
+		logger.Debugf("json MarshalJSON %v %v", string(xx), err)
+	}
+
+	logger.Debugf("json Write %T %s", b, string(debug.Stack()))
 	return c.Encoder.Encode(b)
 }
 
