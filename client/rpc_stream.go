@@ -106,7 +106,7 @@ func (r *rpcStream) Recv(msg interface{}) error {
 
 		r.Unlock()
 
-		logger.Errorf("rpc stream error: %v", err)
+		logger.Errorf("rpc stream error: %v codec:%s", err, r.codec.String())
 
 		return err
 	}
