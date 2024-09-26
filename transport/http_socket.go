@@ -46,14 +46,16 @@ func (h *httpTransportSocket) Remote() string {
 }
 
 func (h *httpTransportSocket) Recv(msg *Message) error {
-	logger.Tracef("httpTransportSocket Recv %s ct:%s", msg.Header["Micro-Endpoint"], msg.Header["Content-Type"])
 	if msg == nil {
 		return errors.New("message passed in is nil")
 	}
 
 	if msg.Header == nil {
 		msg.Header = make(map[string]string, len(h.r.Header))
+		logger.Debugf("===============glod")
 	}
+
+	logger.Tracef("httpTransportSocket Recv %s ct:%s", msg.Header["Micro-Method"], msg.Header["Content-Type"])
 
 	if h.r.ProtoMajor == 1 {
 		return h.recvHTTP1(msg)
