@@ -49,7 +49,7 @@ func newRPCClient(opt ...Option) Client {
 		pool.Transport(opts.Transport),
 	)
 
-	log.Debugf("newRPCClient opts.Transport %T", opts.Transport)
+	log.Tracef("newRPCClient opts.Transport %T", opts.Transport)
 	rc := &rpcClient{
 		opts: opts,
 		pool: p,

@@ -60,7 +60,7 @@ func (r *rpcStream) Send(msg interface{}) error {
 		r.err = errShutdown
 		return errShutdown
 	}
-	logger.Debugf("Send r.request %v", r.request)
+	logger.Tracef("Send r.request %v", r.request)
 	req := codec.Message{
 		Id:       r.id,
 		Target:   r.request.Service(),

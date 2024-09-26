@@ -58,7 +58,7 @@ func encode(cf uint8, buf []byte, w io.Writer) error {
 
 	// set compression
 	header[0] = byte(cf)
-	logger.Debugf("=== Encode: length: %v %s", uint32(len(buf)), string(debug.Stack()))
+	logger.Tracef("=== Encode: length: %v %s", uint32(len(buf)), string(debug.Stack()))
 	// write length as header
 	binary.BigEndian.PutUint32(header[1:], uint32(len(buf)))
 

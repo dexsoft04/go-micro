@@ -138,7 +138,7 @@ func setHeaders(m *codec.Message, stream string) {
 func setupProtocol(msg *transport.Message, node *registry.Node) codec.NewCodec {
 
 	for k, v := range node.Metadata {
-		logger.Debugf("setupProtocol node.metadata[%q] = %q", k, v)
+		logger.Tracef("setupProtocol node.metadata[%q] = %q", k, v)
 	}
 	protocol := node.Metadata["protocol"]
 
@@ -191,25 +191,25 @@ func (c *rpcCodec) Write(message *codec.Message, body interface{}) error {
 		message.Header[k] = v
 	}
 
-	logger.Debugf("========")
+	logger.Tracef("========")
 	// set the mucp headers
 	setHeaders(message, c.stream)
-	logger.Debugf("========")
+	logger.Tracef("========")
 
 	// if body is bytes Frame don't encode
 	if body != nil {
 		if b, ok := body.(*raw.Frame); ok {
 			if b.Data == nil {
-				logger.Debugf("=== nil data")
+				logger.Tracef("=== nil data")
 				b.Data = make([]byte, 0)
 			}
 			// set body
 			message.Body = b.Data
-			logger.Debugf("========")
+			logger.Tracef("========")
 
 		} else {
-			logger.Debugf("======== %v", c.codec)
-			logger.Debugf("========  c.codec.String %v", c.codec.String())
+			logger.Tracef("======== %v", c.codec)
+			logger.Tracef("========  c.codec.String %v", c.codec.String())
 
 			// write to codec
 			if err := c.codec.Write(message, body); err != nil {
@@ -271,7 +271,7 @@ func (c *rpcCodec) ReadBody(b interface{}) error {
 		return nil
 	}
 
-	logger.Debugf("rpcCodec ReadBody %T", c.codec)
+	logger.Tracef("rpcCodec ReadBody %T", c.codec)
 	if err := c.codec.ReadBody(b); err != nil {
 		return errors.InternalServerError("go.micro.client.codec 22222", "%s c.codec[%s]", err.Error(), c.codec.String())
 	}

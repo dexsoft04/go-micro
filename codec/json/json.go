@@ -19,7 +19,7 @@ type Codec struct {
 }
 
 func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
-	logger.Debugf("json ReadHeader %v t%v %s", m.Type, t, string(debug.Stack()))
+	logger.Tracef("json ReadHeader %v t%v %s", m.Type, t, string(debug.Stack()))
 
 	return nil
 }
@@ -29,10 +29,10 @@ func (c *Codec) ReadBody(b interface{}) error {
 		return nil
 	}
 	if pb, ok := b.(proto.Message); ok {
-		logger.Debugf("jsonpb ReadBody %T %s", b, string(debug.Stack()))
+		logger.Tracef("jsonpb ReadBody %T %s", b, string(debug.Stack()))
 		return jsonpb.UnmarshalNext(c.Decoder, pb)
 	}
-	logger.Debugf("json ReadBody %T", b)
+	logger.Tracef("json ReadBody %T", b)
 	return c.Decoder.Decode(b)
 }
 
@@ -43,10 +43,10 @@ func (c *Codec) Write(m *codec.Message, b interface{}) error {
 
 	if jb, ok := b.(*json.RawMessage); ok {
 		xx, err := jb.MarshalJSON()
-		logger.Debugf("json MarshalJSON %v %v", string(xx), err)
+		logger.Tracef("json MarshalJSON %v %v", string(xx), err)
 	}
 
-	logger.Debugf("json Write %T %s", b, string(debug.Stack()))
+	logger.Tracef("json Write %T %s", b, string(debug.Stack()))
 	return c.Encoder.Encode(b)
 }
 
