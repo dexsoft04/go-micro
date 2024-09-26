@@ -1,7 +1,10 @@
 package client
 
 import (
+	"github.com/golang/protobuf/proto"
 	"go-micro.dev/v5/codec"
+	"go-micro.dev/v5/logger"
+	goproto "google.golang.org/protobuf/proto"
 )
 
 type rpcRequest struct {
@@ -26,6 +29,16 @@ func newRequest(service, endpoint string, request interface{}, contentType strin
 		contentType = opts.ContentType
 	}
 
+	if len(contentType) == 0 {
+		if _, ok := request.(proto.Message); ok {
+			contentType = "application/protobuf"
+		} else if _, ok = request.(goproto.Message); ok {
+			contentType = "application/protobuf"
+		} else {
+			contentType = "application/json"
+		}
+	}
+	logger.Debugf("=============== contentType:%v %T", contentType, request)
 	return &rpcRequest{
 		service:     service,
 		method:      endpoint,
