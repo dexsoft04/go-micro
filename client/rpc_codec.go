@@ -229,6 +229,7 @@ func (c *rpcCodec) Write(message *codec.Message, body interface{}) error {
 
 	// send the request
 	if err := c.client.Send(&msg); err != nil {
+		logger.Errorf("write err:%v", err)
 		return errors.InternalServerError("go.micro.client.transport", err.Error())
 	}
 
@@ -291,6 +292,7 @@ func (c *rpcCodec) Close() error {
 	}
 
 	if err := c.client.Close(); err != nil {
+		logger.Errorf("close err:%v", err)
 		return errors.InternalServerError("go.micro.client.transport", err.Error())
 	}
 

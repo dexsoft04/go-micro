@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"go-micro.dev/v5/logger"
 	"sync"
 
 	"github.com/oxtoacart/bpool"
@@ -218,6 +219,7 @@ func (c *rpcCodec) ReadHeader(r *codec.Message, t codec.MessageType) error {
 
 		// read off the socket
 		if err := c.socket.Recv(&tm); err != nil {
+			logger.Logf(logger.ErrorLevel, "ReadHeader Recv err:%v", err)
 			return err
 		}
 		// reset the read buffer
@@ -225,6 +227,7 @@ func (c *rpcCodec) ReadHeader(r *codec.Message, t codec.MessageType) error {
 
 		// write the body to the buffer
 		if _, err := c.buf.rbuf.Write(tm.Body); err != nil {
+			logger.Logf(logger.ErrorLevel, "ReadHeader Write err:%v", err)
 			return err
 		}
 
@@ -260,6 +263,7 @@ func (c *rpcCodec) ReadHeader(r *codec.Message, t codec.MessageType) error {
 
 	// read header via codec
 	if err := c.codec.ReadHeader(&mmsg, codec.Request); err != nil {
+		logger.Logf(logger.ErrorLevel, "ReadHeader Write err:%v [%s]", err, c.codec.String())
 		return err
 	}
 
@@ -285,7 +289,12 @@ func (c *rpcCodec) ReadBody(b interface{}) error {
 		return nil
 	}
 	// decode the usual way
-	return c.codec.ReadBody(b)
+	err := c.codec.ReadBody(b)
+	if nil != err {
+		logger.Logf(logger.ErrorLevel, "ReadBody err:%v [%s]", err, c.codec.String())
+		return err
+	}
+	return nil
 }
 
 func (c *rpcCodec) Write(r *codec.Message, b interface{}) error {
@@ -326,6 +335,7 @@ func (c *rpcCodec) Write(r *codec.Message, b interface{}) error {
 		m.Header[headers.Error] = m.Error
 		// no body to write
 		if err := c.codec.Write(m, nil); err != nil {
+			logger.Logf(logger.ErrorLevel, "Write err:%v [%s]", err, c.codec.String())
 			return err
 		}
 	} else {
