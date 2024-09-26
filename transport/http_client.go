@@ -164,6 +164,7 @@ func (h *httpTransportClient) Recv(msg *Message) (err error) {
 	}
 
 	if rsp.StatusCode != http.StatusOK {
+		log.Logf(log.ErrorLevel, "httpTransportSocket == Body:%s", string(b))
 		log.Logf(log.ErrorLevel, "httpTransportSocket Recv %s error: %v", msg.Header["Micro-Endpoint"], err)
 		return errors.New(rsp.Status + ": " + string(b))
 	}

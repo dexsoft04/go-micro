@@ -55,7 +55,7 @@ func (h *httpTransportSocket) Recv(msg *Message) error {
 		logger.Debugf("===============glod")
 	}
 
-	logger.Tracef("httpTransportSocket Recv %s ct:%s", msg.Header["Micro-Method"], msg.Header["Content-Type"])
+	logger.Tracef("httpTransportSocket Recv %s ct:%s req:%v", msg.Header["Micro-Method"], msg.Header["Content-Type"], h.r)
 
 	if h.r.ProtoMajor == 1 {
 		return h.recvHTTP1(msg)

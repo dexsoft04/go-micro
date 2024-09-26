@@ -212,6 +212,7 @@ func (s *service) call(ctx context.Context, router *router, sending *sync.Mutex,
 	function := mtype.method.Func
 	var returnValues []reflect.Value
 
+	log.Log(log.ErrorLevel, "rpc_server === call %v", req.msg)
 	r := &rpcRequest{
 		service:     req.msg.Target,
 		contentType: req.msg.Header["Content-Type"],
@@ -498,6 +499,7 @@ func (router *router) ServeRequest(ctx context.Context, r Request, rsp Response)
 	sending := new(sync.Mutex)
 	service, mtype, req, argv, replyv, keepReading, err := router.readRequest(r)
 	if err != nil {
+		log.Logf(log.ErrorLevel, "rpc.ServeRequest: error reading request: %v", err)
 		if !keepReading {
 			return err
 		}
