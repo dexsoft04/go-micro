@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"go-micro.dev/v5/logger"
 
 	"go-micro.dev/v5/codec"
 	"go-micro.dev/v5/transport"
@@ -70,6 +71,7 @@ func (r *rpcRequest) Read() ([]byte, error) {
 	var msg transport.Message
 	err := r.socket.Recv(&msg)
 	if err != nil {
+		logger.Logf(logger.ErrorLevel, "server rpc request read error: %v", err)
 		return nil, err
 	}
 	r.header = msg.Header

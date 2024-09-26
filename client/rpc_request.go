@@ -28,7 +28,7 @@ func newRequest(service, endpoint string, request interface{}, contentType strin
 	if len(opts.ContentType) > 0 {
 		contentType = opts.ContentType
 	}
-	logger.Debugf("=============== contentType:%v %T", contentType, request)
+	logger.Debugf("=============== newRequest contentType:%v %T", contentType, request)
 	if len(contentType) == 0 {
 		if _, ok := request.(proto.Message); ok {
 			contentType = "application/protobuf"
@@ -37,9 +37,8 @@ func newRequest(service, endpoint string, request interface{}, contentType strin
 		} else {
 			contentType = "application/json"
 		}
-		logger.Debugf("=============== contentType:%v %T", contentType, request)
+		logger.Debugf("=============== newRequest set default contentType:%v %T", contentType, request)
 	}
-	contentType = "application/protobuf"
 
 	return &rpcRequest{
 		service:     service,
