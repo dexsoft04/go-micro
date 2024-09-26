@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -104,7 +105,7 @@ func (h *httpTransportClient) Send(m *Message) error {
 
 // Recv receives a message.
 func (h *httpTransportClient) Recv(msg *Message) (err error) {
-	log.Tracef("httpTransportSocket Recv Endpoint:[%s] ct:%s", msg.Header["Micro-Endpoint"], msg.Header["Content-Type"])
+	log.Tracef("httpTransportSocket Recv Endpoint:[%s] ct:%s %s", msg.Header["Micro-Endpoint"], msg.Header["Content-Type"], string(debug.Stack()))
 
 	if msg == nil {
 		return errors.New("message passed in is nil")
