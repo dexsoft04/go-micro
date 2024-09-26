@@ -220,7 +220,7 @@ func (r *rpcClient) call(
 			return
 		}
 
-		logger.Logf(log.DebugLevel, "recv stream Method %s %T stream:%T", req.Method(), resp, stream)
+		logger.Logf(log.TraceLevel, "recv stream Method %s %T stream:%T", req.Method(), resp, stream)
 		// recv response
 		if err := stream.Recv(resp); err != nil {
 			logger.Logf(log.ErrorLevel, "failed to recv stream %v %s", err, string(debug.Stack()))

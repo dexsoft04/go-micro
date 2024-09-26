@@ -41,6 +41,7 @@ func (h *httpTransportListener) Accept(fn func(Socket)) error {
 		handlers, ok := h.ht.opts.Context.Value("http_handlers").(map[string]http.Handler)
 		if ok {
 			for pattern, handler := range handlers {
+				log.Tracef("Accepting %s %s", pattern, handler)
 				mux.Handle(pattern, handler)
 			}
 		}
@@ -70,6 +71,7 @@ func (h *httpTransportListener) newHandler(serveConn func(Socket)) func(rsp http
 			con net.Conn
 		)
 
+		log.Logf(log.TraceLevel, "server handler %s", req.URL.Path)
 		// HTTP1: read a regular request
 		if req.ProtoMajor == 1 {
 			b, err := io.ReadAll(req.Body)
