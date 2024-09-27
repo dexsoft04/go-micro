@@ -30,7 +30,7 @@ func (c *Codec) ReadBody(b interface{}) error {
 	}
 	if pb, ok := b.(proto.Message); ok {
 		logger.Tracef("jsonpb ReadBody %T %s", b, string(debug.Stack()))
-		marshaller := jsonpb.Unmarshaler{}
+		marshaller := jsonpb.Unmarshaler{AllowUnknownFields: true}
 		return marshaller.UnmarshalNext(c.Decoder, pb)
 	}
 	logger.Tracef("json ReadBody %T", b)
