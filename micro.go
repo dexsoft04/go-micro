@@ -8,6 +8,10 @@ import (
 	"go-micro.dev/v5/server"
 )
 
+func init() {
+	initDefaultConfig()
+}
+
 type serviceKey struct{}
 
 // Service is an interface that wraps the lower level libraries

@@ -46,7 +46,6 @@ func (c *Codec) Write(m *codec.Message, b interface{}) error {
 		xx, err := jb.MarshalJSON()
 		logger.Tracef("json MarshalJSON %v %v", string(xx), err)
 	}
-
 	logger.Tracef("json Write %T %s", b, string(debug.Stack()))
 	return c.Encoder.Encode(b)
 }
