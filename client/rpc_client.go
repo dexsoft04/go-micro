@@ -136,7 +136,7 @@ func (r *rpcClient) call(
 			logger.Log(log.ErrorLevel, "failed to create codec: %v ContentType:%v", err, req.ContentType())
 			return merrors.InternalServerError("go.micro.client", err.Error())
 		}
-		logger.Logf(log.DebugLevel, "create codec: reqCodec:%T ContentType:%v", reqCodec, req.ContentType())
+		logger.Logf(log.TraceLevel, "create codec: reqCodec:%T ContentType:%v", reqCodec, req.ContentType())
 
 	}
 
@@ -162,7 +162,7 @@ func (r *rpcClient) call(
 
 	seq := atomic.AddUint64(&r.seq, 1) - 1
 	codec := newRPCCodec(msg, c, reqCodec, "")
-	logger.Logf(log.DebugLevel, "newRPCCodec reqCodec:%T codec:%T", reqCodec, codec)
+	logger.Logf(log.TraceLevel, "newRPCCodec reqCodec:%T codec:%T", reqCodec, codec)
 	rsp := &rpcResponse{
 		socket: c,
 		codec:  codec,
