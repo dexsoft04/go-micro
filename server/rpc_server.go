@@ -152,7 +152,9 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 			// We're saying we essentially can't
 			// use the socket anymore
 			gerr = errors.Wrapf(err, "%s-%s | %s", s.opts.Name, s.opts.Id, sock.Remote())
-			log.Errorf("error while serving connection: %v", gerr)
+			if err != io.EOF {
+				log.Errorf("error while serving connection: %v", gerr)
+			}
 			return
 		}
 
