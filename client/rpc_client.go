@@ -223,8 +223,7 @@ func (r *rpcClient) call(
 		logger.Logf(log.TraceLevel, "recv stream Method %s %T stream:%T", req.Method(), resp, stream)
 		// recv response
 		if err := stream.Recv(resp); err != nil {
-			logger.Logf(log.ErrorLevel, "failed to recv stream %v %s", err, string(debug.Stack()))
-
+			logger.Logf(log.TraceLevel, "failed to recv stream %v %s", err, string(debug.Stack()))
 			ch <- err
 			return
 		}

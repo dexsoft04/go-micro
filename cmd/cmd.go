@@ -2,8 +2,12 @@
 package cmd
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -95,6 +99,11 @@ var (
 			Usage:   "Name of the server. go.micro.srv.example",
 		},
 		&cli.StringFlag{
+			Name:    "service_name",
+			EnvVars: []string{"MICRO_SERVICE_NAME"},
+			Usage:   "Name of the server. go.micro.srv.example",
+		},
+		&cli.StringFlag{
 			Name:    "server_version",
 			EnvVars: []string{"MICRO_SERVER_VERSION"},
 			Usage:   "Version of the server. 1.1.0",
@@ -131,6 +140,21 @@ var (
 			Usage:   "Comma-separated list of broker addresses",
 		},
 		&cli.StringFlag{
+			Name:    "broker_tls_ca",
+			EnvVars: []string{"MICRO_BROKER_TLS_CA"},
+			Usage:   "Comma-separated list of broker tls ca",
+		},
+		&cli.StringFlag{
+			Name:    "broker_tls_cert",
+			EnvVars: []string{"MICRO_BROKER_TLS_CERT"},
+			Usage:   "Comma-separated list of broker tls cert",
+		},
+		&cli.StringFlag{
+			Name:    "broker_tls_key",
+			EnvVars: []string{"MICRO_BROKER_TLS_KEY"},
+			Usage:   "Comma-separated list of broker tls key",
+		},
+		&cli.StringFlag{
 			Name:    "profile",
 			Usage:   "Debug profiler for cpu and memory stats",
 			EnvVars: []string{"MICRO_DEBUG_PROFILE"},
@@ -144,6 +168,21 @@ var (
 			Name:    "registry_address",
 			EnvVars: []string{"MICRO_REGISTRY_ADDRESS"},
 			Usage:   "Comma-separated list of registry addresses",
+		},
+		&cli.StringFlag{
+			Name:    "registry_tls_ca",
+			EnvVars: []string{"MICRO_REGISTRY_TLS_CA"},
+			Usage:   "Comma-separated list of registry tls ca",
+		},
+		&cli.StringFlag{
+			Name:    "registry_tls_cert",
+			EnvVars: []string{"MICRO_REGISTRY_TLS_CERT"},
+			Usage:   "Comma-separated list of registry tls cert",
+		},
+		&cli.StringFlag{
+			Name:    "registry_tls_key",
+			EnvVars: []string{"MICRO_REGISTRY_TLS_KEY"},
+			Usage:   "Comma-separated list of registry tls key",
 		},
 		&cli.StringFlag{
 			Name:    "selector",
@@ -329,6 +368,7 @@ func (c *cmd) Before(ctx *cli.Context) error {
 	var serverOpts []server.Option
 	var clientOpts []client.Option
 
+	logger.Logf(logger.TraceLevel, "before %s", string(debug.Stack()))
 	// Set the client
 	if name := ctx.String("client"); len(name) > 0 {
 		// only change if we have the client and type differs
@@ -482,8 +522,48 @@ func (c *cmd) Before(ctx *cli.Context) error {
 		}
 	}
 
+	if len(ctx.String("broker_tls_ca")) > 0 || len(ctx.String("broker_tls_key")) > 0 || len(ctx.String("broker_tls_cert")) > 0 {
+		// Parse broker TLS certs
+		cert, err := tls.LoadX509KeyPair(ctx.String("broker_tls_cert"), ctx.String("broker_tls_key"))
+		if err != nil {
+			logger.Fatalf("Error loading broker TLS cert: %v", err)
+		}
+		cfg := &tls.Config{Certificates: []tls.Certificate{cert}}
+		if len(ctx.String("broker_tls_ca")) > 0 {
+			crt, err := ioutil.ReadFile(ctx.String("broker_tls_ca"))
+			if err != nil {
+				logger.Fatalf("Error loading broker TLS certificate authority: %v", err)
+			}
+			ca := x509.NewCertPool()
+			ca.AppendCertsFromPEM(crt)
+			cfg.RootCAs = ca
+		}
+		if err := (*c.opts.Broker).Init(broker.TLSConfig(cfg)); err != nil {
+			logger.Fatalf("Error configuring broker: %v", err)
+		}
+	}
+
 	if len(ctx.String("registry_address")) > 0 {
 		if err := (*c.opts.Registry).Init(registry.Addrs(strings.Split(ctx.String("registry_address"), ",")...)); err != nil {
+			logger.Fatalf("Error configuring registry: %v", err)
+		}
+	}
+
+	if len(ctx.String("registry_tls_cert")) > 0 || len(ctx.String("registry_tls_key")) > 0 {
+		cert, err := tls.LoadX509KeyPair(ctx.String("registry_tls_cert"), ctx.String("registry_tls_key"))
+		if err != nil {
+			logger.Fatalf("Error loading registry tls cert: %v", err)
+		}
+
+		caCertPool := x509.NewCertPool()
+		if len(ctx.String("registry_tls_ca")) > 0 {
+			crt, err := ioutil.ReadFile(ctx.String("registry_tls_ca"))
+			if err != nil {
+				logger.Fatalf("Error loading registry tls certificate authority: %v", err)
+			}
+			caCertPool.AppendCertsFromPEM(crt)
+		}
+		if err := (*c.opts.Registry).Init(registry.TLSConfig(&tls.Config{Certificates: []tls.Certificate{cert}, RootCAs: caCertPool})); err != nil {
 			logger.Fatalf("Error configuring registry: %v", err)
 		}
 	}
@@ -510,6 +590,10 @@ func (c *cmd) Before(ctx *cli.Context) error {
 		if err := (*c.opts.Store).Init(store.Table(ctx.String("store_table"))); err != nil {
 			logger.Fatalf("Error configuring store table option: %v", err)
 		}
+	}
+
+	if len(ctx.String("service_name")) > 0 {
+		serverOpts = append(serverOpts, server.Name(ctx.String("service_name")))
 	}
 
 	if len(ctx.String("server_name")) > 0 {
