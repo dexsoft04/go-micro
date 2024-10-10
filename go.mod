@@ -29,6 +29,9 @@ require (
 	github.com/nats-io/nats.go v1.31.0 // indirect
 	github.com/nats-io/nkeys v0.4.5 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
+	github.com/spf13/cast v1.5.0 // indirect
+	github.com/zigo2048/mcbeam-common-lib/api/micro-v3/proto/api v0.0.0-20240830072932-574d8d198d5f // indirect
+	github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader v0.0.0-20241010092605-2d5acd9d82f0 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.2 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.2 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.2 // indirect
@@ -62,9 +65,9 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/micro/plugins/v5/broker/nats v1.0.2
 	github.com/micro/plugins/v5/registry/etcd v1.0.2
+	github.com/zigo2048/mcbeam-common-lib/common/config v0.0.0-20240830024144-c49e5068b3c1
 	github.com/zigo2048/mcbeam-common-lib/common/uauth v0.0.0-20240929034241-c9297526a163 // indirect
 	github.com/zigo2048/mcbeam-common-lib/common/wrapper/debug v0.0.0-20240929114423-dc0f7443e7a9
 	github.com/zigo2048/mcbeam-common-lib/common/wrapper/wrapper v0.0.0-20240929114423-dc0f7443e7a9
-	github.com/zigo2048/mcbeam-common-lib/common/config v0.0.0-20240830024144-c49e5068b3c1
 	github.com/zigo2048/mcbeam-common-lib/plugins/config/apollo/v3 v3.0.0-20240929031309-0deb899bd6ef
 )

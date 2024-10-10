@@ -3,6 +3,7 @@ package micro
 import (
 	"github.com/philchia/agollo/v4"
 	"github.com/zigo2048/mcbeam-common-lib/common/config"
+	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader"
 	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/debug"
 	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/wrapper"
 	"github.com/zigo2048/mcbeam-common-lib/plugins/config/apollo/v3"
@@ -26,8 +27,9 @@ func initDefaultConfig() {
 
 	var err error
 	err = server.DefaultServer.Init(
-		server.WrapHandler(wrapper.AuthHandler()),
 		server.WrapHandler(debug.WrapperHandler),
+		server.WrapHandler(apiheader.NewDefaultHeaderHandlerWrapper),
+		server.WrapHandler(wrapper.AuthHandler()),
 	)
 	if nil != err {
 		logger.Fatalf("init default server err:%s", err)

@@ -165,6 +165,8 @@ github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQD
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
 github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6MwdIuYE2rE=
 github.com/sirupsen/logrus v1.6.0/go.mod h1:7uNnSEd1DgxDLC74fIahvMZmmYsHGZGEOFrfsX/uA88=
+github.com/spf13/cast v1.5.0 h1:rj3WzYc11XZaIZMPKmwP96zkFEnnAmV8s6XbB2aY32w=
+github.com/spf13/cast v1.5.0/go.mod h1:SpXXQ5YoyJw6s3/6cMTQuxvgRl3PCJiyaX9p6b155UU=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
@@ -185,10 +187,16 @@ github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673/go.mod h1:N3UwUGtsr
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
+github.com/zigo2048/mcbeam-common-lib/api/micro-v3/proto/api v0.0.0-20240830072932-574d8d198d5f h1:WApMI2qOlLUIB0aV5G2WwmJFzArjAr+sJE0PsV3hHUo=
+github.com/zigo2048/mcbeam-common-lib/api/micro-v3/proto/api v0.0.0-20240830072932-574d8d198d5f/go.mod h1:ucchfk607w0wTpzE4YFlUBg1Y5VfFKshIiBH3f39q38=
 github.com/zigo2048/mcbeam-common-lib/common/config v0.0.0-20240830024144-c49e5068b3c1 h1:dhfE2hKbBQWeuXiM7+OGqizKD/BtrLWzCcLa53qYnv0=
 github.com/zigo2048/mcbeam-common-lib/common/config v0.0.0-20240830024144-c49e5068b3c1/go.mod h1:Md2zCvQ1MiNGYmqV9JDpjb0QLuKn2b/8zbCGVguZ3CU=
 github.com/zigo2048/mcbeam-common-lib/common/uauth v0.0.0-20240929034241-c9297526a163 h1:ILNipstOWru7xrE2fqH7F7P6nHvufO0UaBQVgTBl3G8=
 github.com/zigo2048/mcbeam-common-lib/common/uauth v0.0.0-20240929034241-c9297526a163/go.mod h1:h9O2AF1c4eM9JDMIhGiJG49TPFwA75Y6Cq9F3zFB3Rg=
+github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader v0.0.0-20240929114423-dc0f7443e7a9 h1:cPyQfXefnyLj9jH8N6P9l0EUBBkzFlIJqz9L4/XsrEE=
+github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader v0.0.0-20240929114423-dc0f7443e7a9/go.mod h1:TSSUA+Epoe4Uuq4SQZb1sQvuClZ1uyfiYhmC4XBBGT0=
+github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader v0.0.0-20241010092605-2d5acd9d82f0 h1:INFs9mCPa2G4mLbatMngLSBUkdldzBpscOeFSklI5OY=
+github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader v0.0.0-20241010092605-2d5acd9d82f0/go.mod h1:TSSUA+Epoe4Uuq4SQZb1sQvuClZ1uyfiYhmC4XBBGT0=
 github.com/zigo2048/mcbeam-common-lib/common/wrapper/debug v0.0.0-20240929114423-dc0f7443e7a9 h1:y4HkI7eCMXSnl3Y8ULFYbCvMO82GMw+WJAwXh2BCrlA=
 github.com/zigo2048/mcbeam-common-lib/common/wrapper/debug v0.0.0-20240929114423-dc0f7443e7a9/go.mod h1:0cDXAivGM7al4oaBLYFEbhSD39PsDEbHDsxzAl/g9ns=
 github.com/zigo2048/mcbeam-common-lib/common/wrapper/wrapper v0.0.0-20240929114423-dc0f7443e7a9 h1:f32r1MmAmHe9GoWSc3xrPkZQnRmKkjH1FpTWCDOCLkA=
