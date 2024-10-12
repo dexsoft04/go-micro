@@ -451,6 +451,8 @@ func (c *cmd) Before(ctx *cli.Context) error {
 		if err := (*c.opts.Broker).Init(broker.Registry(*c.opts.Registry)); err != nil {
 			logger.Fatalf("Error configuring broker: %v", err)
 		}
+
+		registry.DefaultRegistry = *c.opts.Registry
 	}
 
 	// Set the profile
@@ -473,6 +475,7 @@ func (c *cmd) Before(ctx *cli.Context) error {
 		*c.opts.Broker = b()
 		serverOpts = append(serverOpts, server.Broker(*c.opts.Broker))
 		clientOpts = append(clientOpts, client.Broker(*c.opts.Broker))
+		broker.DefaultBroker = *c.opts.Broker
 	}
 
 	// Set the selector
