@@ -200,18 +200,12 @@ func (r *rpcClient) call(
 		defer func() {
 			if r := recover(); r != nil {
 				if nil != msg && nil != msg.Header {
-					logger.Log(log.TraceLevel, "send stream req is nil %v %v", msg.Header["Micro-Endpoint"], r)
+					logger.Logf(log.TraceLevel, "send stream req is nil def %v %v", msg.Header["Micro-Endpoint"], r)
 				}
+				logger.Logf(log.ErrorLevel, "rcpClient.call codec[%s] req:%v panic recovered: %v", codec.String(), req, r)
 				ch <- merrors.InternalServerError("go.micro.client", "codec[%s] panic recovered: %v", codec.String(), r)
 			}
 		}()
-
-		if nil != req {
-			logger.Logf(log.TraceLevel, "send stream req%v", req)
-			logger.Logf(log.TraceLevel, "send stream Method:%s %T", req.Method(), req.Body())
-		} else {
-			logger.Logf(log.ErrorLevel, "send stream req is nil %v", req)
-		}
 
 		// send request
 		if err := stream.Send(req.Body()); err != nil {

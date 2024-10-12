@@ -279,6 +279,7 @@ func (c *rpcCodec) ReadHeader(r *codec.Message, t codec.MessageType) error {
 }
 
 func (c *rpcCodec) ReadBody(b interface{}) error {
+	logger.Tracef("======rpcCodec ReadBody %T", b)
 	// don't read empty body
 	if len(c.req.Body) == 0 {
 		return nil

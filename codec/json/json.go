@@ -26,6 +26,7 @@ func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
 
 func (c *Codec) ReadBody(b interface{}) error {
 	if b == nil {
+		logger.Debugf("json ReadBody nil b %v", b)
 		return nil
 	}
 	if pb, ok := b.(proto.Message); ok {

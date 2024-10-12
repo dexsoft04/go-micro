@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"net"
-	"runtime/debug"
 	"sort"
 	"strconv"
 	"strings"
@@ -131,8 +130,7 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 
 		// recover any panics
 		if r := recover(); r != nil {
-			logger.Log(log.ErrorLevel, "panic recovered: ", r)
-			logger.Log(log.ErrorLevel, string(debug.Stack()))
+			logger.Log(log.ErrorLevel, "rpcServer. ServerConn panic recovered: ", r)
 		}
 	}()
 
@@ -855,8 +853,7 @@ func (s *rpcServer) deferer(pool *socket.Pool, psock *socket.Socket, wg *waitGro
 
 	logger := s.opts.Logger
 	if r := recover(); r != nil {
-		logger.Log(log.ErrorLevel, "panic recovered: ", r)
-		logger.Log(log.ErrorLevel, string(debug.Stack()))
+		logger.Log(log.ErrorLevel, "rpcServer deferer panic recovered: ", r)
 	}
 }
 

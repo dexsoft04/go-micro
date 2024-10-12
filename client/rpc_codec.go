@@ -190,30 +190,26 @@ func (c *rpcCodec) Write(message *codec.Message, body interface{}) error {
 	for k, v := range c.req.Header {
 		message.Header[k] = v
 	}
-
-	logger.Tracef("========")
 	// set the mucp headers
 	setHeaders(message, c.stream)
-	logger.Tracef("========")
 
 	// if body is bytes Frame don't encode
 	if body != nil {
 		if b, ok := body.(*raw.Frame); ok {
+			if b == nil {
+				b = &raw.Frame{
+					Data: make([]byte, 0),
+				}
+			}
 			if b.Data == nil {
-				logger.Tracef("=== nil data")
 				b.Data = make([]byte, 0)
 			}
 			// set body
 			message.Body = b.Data
-			logger.Tracef("========")
-
 		} else {
-			logger.Tracef("======== %v", c.codec)
-			logger.Tracef("========  c.codec.String %v", c.codec.String())
-
 			// write to codec
 			if err := c.codec.Write(message, body); err != nil {
-				logger.Errorf("go.micro.client.codec 0000 %s c.codec[%v]", err.Error(), c.codec)
+				logger.Errorf("rpcCodec Write 0000 %s c.codec[%v]", err.Error(), c.codec)
 				return errors.InternalServerError("go.micro.client.codec 0000", "%s c.codec[%s]", err.Error(), c.codec.String())
 			}
 			// set body

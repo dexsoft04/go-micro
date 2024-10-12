@@ -383,6 +383,7 @@ func (router *router) readRequest(r Request) (service *service, mtype *methodTyp
 
 	// argv guaranteed to be a pointer now.
 	if err = cc.ReadBody(argv.Interface()); err != nil {
+		log.Tracef("rpc router read body err: %v", err)
 		return
 	}
 
@@ -547,9 +548,8 @@ func (router *router) ProcessMessage(ctx context.Context, msg Message) (err erro
 	defer func() {
 		// recover any panics
 		if r := recover(); r != nil {
-			router.ops.Logger.Logf(log.ErrorLevel, "panic recovered: %v", r)
-			router.ops.Logger.Log(log.ErrorLevel, string(debug.Stack()))
-			err = merrors.InternalServerError("go.micro.server", "panic recovered: %v", r)
+			router.ops.Logger.Logf(log.ErrorLevel, "router ProcessMessage panic recovered: %v", r)
+			err = merrors.InternalServerError("go.micro.server", "router.ProcessMessage panic recovered: %v", r)
 		}
 	}()
 
