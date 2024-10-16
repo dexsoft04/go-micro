@@ -421,3 +421,18 @@ func WithLogger(l logger.Logger) Option {
 		o.Logger = l
 	}
 }
+
+func WithServerUid(sid string) CallOption {
+	return WithSelectOption(selector.WithFilter(func(services []*registry.Service) []*registry.Service {
+		out := make([]*registry.Service, 0, len(services))
+		for _, srv := range services {
+			for _, node := range srv.Nodes {
+				if node.Id == sid {
+					out = append(out, srv)
+					break
+				}
+			}
+		}
+		return out
+	}))
+}

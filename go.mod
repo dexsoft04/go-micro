@@ -14,6 +14,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.1
 	github.com/urfave/cli/v2 v2.25.7
+	github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader v0.0.0-20241010092605-2d5acd9d82f0
 	golang.org/x/crypto v0.23.0
 	golang.org/x/net v0.25.0
 	golang.org/x/sync v0.8.0
@@ -31,7 +32,6 @@ require (
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/zigo2048/mcbeam-common-lib/api/micro-v3/proto/api v0.0.0-20240830072932-574d8d198d5f // indirect
-	github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader v0.0.0-20241010092605-2d5acd9d82f0 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.2 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.2 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.2 // indirect
@@ -48,7 +48,6 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
-	github.com/kr/pretty v0.3.0 // indirect
 	github.com/philchia/agollo/v4 v4.1.5
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect

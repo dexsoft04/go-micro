@@ -234,14 +234,19 @@ func (s *service) call(ctx context.Context, router *router, sending *sync.Mutex,
 	}
 
 	if !mtype.stream {
-		fn := func(ctx context.Context, req Request, rsp interface{}) error {
+		fn := func(ctx context.Context, req Request, rsp interface{}) (err error) {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Log(log.ErrorLevel, "deferer panic recovered: ", r)
+					err = errors.New(fmt.Sprint(r))
+				}
+			}()
 			returnValues = function.Call([]reflect.Value{s.rcvr, mtype.prepareContext(ctx), reflect.ValueOf(argv.Interface()), reflect.ValueOf(rsp)})
 
 			// The return value for the method is an error.
 			if err := returnValues[0].Interface(); err != nil {
 				return err.(error)
 			}
-
 			return nil
 		}
 
