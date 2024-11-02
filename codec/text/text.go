@@ -3,11 +3,8 @@ package text
 
 import (
 	"fmt"
-	"go-micro.dev/v5/logger"
-	"io"
-	"runtime/debug"
-
 	"go-micro.dev/v5/codec"
+	"io"
 )
 
 type Codec struct {
@@ -20,13 +17,13 @@ type Frame struct {
 }
 
 func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
-	logger.Tracef("text ReadHeader %v %s", t, string(debug.Stack()))
+	//logger.Tracef("text ReadHeader %v %s", t, string(debug.Stack()))
 
 	return nil
 }
 
 func (c *Codec) ReadBody(b interface{}) error {
-	logger.Tracef("text ReadBody %T %s", b, string(debug.Stack()))
+	//logger.Tracef("text ReadBody %T %s", b, string(debug.Stack()))
 
 	// read bytes
 	buf, err := io.ReadAll(c.Conn)
@@ -49,7 +46,7 @@ func (c *Codec) ReadBody(b interface{}) error {
 }
 
 func (c *Codec) Write(m *codec.Message, b interface{}) error {
-	logger.Tracef("text Write Type:%v %s", m.Type, string(debug.Stack()))
+	//logger.Tracef("text Write Type:%v %s", m.Type, string(debug.Stack()))
 
 	var v []byte
 	switch ve := b.(type) {

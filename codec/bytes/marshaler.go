@@ -2,8 +2,6 @@ package bytes
 
 import (
 	"go-micro.dev/v5/codec"
-	"go-micro.dev/v5/logger"
-	"runtime/debug"
 )
 
 type Marshaler struct{}
@@ -14,7 +12,7 @@ type Message struct {
 }
 
 func (n Marshaler) Marshal(v interface{}) ([]byte, error) {
-	logger.Tracef("bytes Marshal %T %s", v, string(debug.Stack()))
+	//logger.Tracef("bytes Marshal %T %s", v, string(debug.Stack()))
 
 	switch ve := v.(type) {
 	case *[]byte:
@@ -28,7 +26,7 @@ func (n Marshaler) Marshal(v interface{}) ([]byte, error) {
 }
 
 func (n Marshaler) Unmarshal(d []byte, v interface{}) error {
-	logger.Tracef("bytes Unmarshal %T %s", v, string(debug.Stack()))
+	//logger.Tracef("bytes Unmarshal %T %s", v, string(debug.Stack()))
 
 	switch ve := v.(type) {
 	case *[]byte:

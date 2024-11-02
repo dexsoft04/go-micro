@@ -3,13 +3,11 @@ package json
 
 import (
 	"encoding/json"
-	"go-micro.dev/v5/logger"
-	"io"
-	"runtime/debug"
-
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"go-micro.dev/v5/codec"
+	"go-micro.dev/v5/logger"
+	"io"
 )
 
 type Codec struct {
@@ -19,7 +17,7 @@ type Codec struct {
 }
 
 func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
-	logger.Tracef("json ReadHeader %v t%v %s", m.Type, t, string(debug.Stack()))
+	//logger.Tracef("json ReadHeader %v t%v %s", m.Type, t, string(debug.Stack()))
 
 	return nil
 }
@@ -30,7 +28,7 @@ func (c *Codec) ReadBody(b interface{}) error {
 		return nil
 	}
 	if pb, ok := b.(proto.Message); ok {
-		logger.Tracef("jsonpb ReadBody %T %s", b, string(debug.Stack()))
+		//logger.Tracef("jsonpb ReadBody %T %s", b, string(debug.Stack()))
 		marshaller := jsonpb.Unmarshaler{AllowUnknownFields: true}
 		return marshaller.UnmarshalNext(c.Decoder, pb)
 	}
@@ -47,7 +45,7 @@ func (c *Codec) Write(m *codec.Message, b interface{}) error {
 		xx, err := jb.MarshalJSON()
 		logger.Tracef("json MarshalJSON %v %v", string(xx), err)
 	}
-	logger.Tracef("json Write %T %s", b, string(debug.Stack()))
+	//logger.Tracef("json Write %T %s", b, string(debug.Stack()))
 	return c.Encoder.Encode(b)
 }
 

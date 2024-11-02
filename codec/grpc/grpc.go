@@ -30,7 +30,7 @@ func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
 		c.ContentType = ct
 	}
 
-	logger.Tracef("grpc ReadHeader ContentType:%v %s t:%v %s", m.Header["Content-Type"], c.ContentType, t, string(debug.Stack()))
+	//logger.Tracef("grpc ReadHeader ContentType:%v %s t:%v %s", m.Header["Content-Type"], c.ContentType, t, string(debug.Stack()))
 
 	// service method
 	path := m.Header[":path"]
@@ -54,25 +54,25 @@ func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
 func (c *Codec) ReadBody(b interface{}) error {
 	// no body
 	if b == nil {
-		logger.Tracef("grpc ReadHeader ContentType:%v nil b:%T %s", c.ContentType, b, string(debug.Stack()))
+		//logger.Tracef("grpc ReadHeader ContentType:%v nil b:%T %s", c.ContentType, b, string(debug.Stack()))
 		return nil
 	}
 
 	_, buf, err := decode(c.Conn)
 	if err != nil {
-		logger.Errorf("grpc Failed to decode request: %v c.Conn:%T %s", err, c.Conn, string(debug.Stack()))
+		//logger.Errorf("grpc Failed to decode request: %v c.Conn:%T %s", err, c.Conn, string(debug.Stack()))
 		return err
 	}
 
 	switch c.ContentType {
 	case "application/grpc+json":
-		logger.Tracef("grpc ReadHeader json ContentType:%v b:%T %s", c.ContentType, b, string(debug.Stack()))
+		//logger.Tracef("grpc ReadHeader json ContentType:%v b:%T %s", c.ContentType, b, string(debug.Stack()))
 		return json.Unmarshal(buf, b)
 	case "application/grpc+proto", "application/grpc":
-		logger.Tracef("grpc ReadHeader proto ContentType:%v b:%T %s", c.ContentType, b, string(debug.Stack()))
+		//logger.Tracef("grpc ReadHeader proto ContentType:%v b:%T %s", c.ContentType, b, string(debug.Stack()))
 		return proto.Unmarshal(buf, b.(proto.Message))
 	}
-	logger.Tracef("grpc ReadHeader ContentType:%v Unsupported b:%T %s", c.ContentType, b, string(debug.Stack()))
+	//logger.Tracef("grpc ReadHeader ContentType:%v Unsupported b:%T %s", c.ContentType, b, string(debug.Stack()))
 	return errors.New("Unsupported Content-Type")
 }
 
@@ -87,7 +87,7 @@ func (c *Codec) Write(m *codec.Message, b interface{}) error {
 	if ct := m.Header["content-type"]; len(ct) > 0 {
 		c.ContentType = ct
 	}
-	logger.Tracef("grpc Write ContentType:%v %s b:%T m.Type:%v %s", m.Header["Content-Type"], c.ContentType, b, m.Type, string(debug.Stack()))
+	//logger.Tracef("grpc Write ContentType:%v %s b:%T m.Type:%v %s", m.Header["Content-Type"], c.ContentType, b, m.Type, string(debug.Stack()))
 
 	switch m.Type {
 	case codec.Request:

@@ -137,9 +137,9 @@ func setHeaders(m *codec.Message, stream string) {
 // setupProtocol sets up the old protocol.
 func setupProtocol(msg *transport.Message, node *registry.Node) codec.NewCodec {
 
-	for k, v := range node.Metadata {
-		logger.Tracef("setupProtocol node.metadata[%q] = %q", k, v)
-	}
+	//for k, v := range node.Metadata {
+	//logger.Tracef("setupProtocol node.metadata[%q] = %q", k, v)
+	//}
 	protocol := node.Metadata["protocol"]
 
 	// got protocol
@@ -270,7 +270,7 @@ func (c *rpcCodec) ReadBody(b interface{}) error {
 		return nil
 	}
 
-	logger.Tracef("rpcCodec ReadBody %T", c.codec)
+	//logger.Tracef("rpcCodec ReadBody %T", c.codec)
 	if err := c.codec.ReadBody(b); err != nil {
 		return errors.InternalServerError("go.micro.client.codec 22222", "%s c.codec[%s]", err.Error(), c.codec.String())
 	}

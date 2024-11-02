@@ -5,11 +5,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"go-micro.dev/v5/logger"
-	"io"
-	"runtime/debug"
-
 	"go-micro.dev/v5/codec"
+	"io"
 )
 
 type jsonCodec struct {
@@ -30,7 +27,7 @@ func (j *jsonCodec) String() string {
 }
 
 func (j *jsonCodec) Write(m *codec.Message, b interface{}) error {
-	logger.Tracef("jsonrpc Write b:%T m.Type:%v %s", b, m.Type, string(debug.Stack()))
+	//logger.Tracef("jsonrpc Write b:%T m.Type:%v %s", b, m.Type, string(debug.Stack()))
 	switch m.Type {
 	case codec.Request:
 		return j.c.Write(m, b)
@@ -49,7 +46,7 @@ func (j *jsonCodec) Write(m *codec.Message, b interface{}) error {
 }
 
 func (j *jsonCodec) ReadHeader(m *codec.Message, mt codec.MessageType) error {
-	logger.Tracef("jsonrpc ReadHeader mt:%v m.Type:%v %s", mt, m.Type, string(debug.Stack()))
+	//logger.Tracef("jsonrpc ReadHeader mt:%v m.Type:%v %s", mt, m.Type, string(debug.Stack()))
 	j.buf.Reset()
 	j.mt = mt
 
@@ -67,7 +64,7 @@ func (j *jsonCodec) ReadHeader(m *codec.Message, mt codec.MessageType) error {
 }
 
 func (j *jsonCodec) ReadBody(b interface{}) error {
-	logger.Tracef("jsonrpc ReadBody b:%T %s", b, string(debug.Stack()))
+	//logger.Tracef("jsonrpc ReadBody b:%T %s", b, string(debug.Stack()))
 
 	switch j.mt {
 	case codec.Request:

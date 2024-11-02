@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"fmt"
-	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -136,7 +135,7 @@ func (r *rpcClient) call(
 			logger.Log(log.ErrorLevel, "failed to create codec: %v ContentType:%v", err, req.ContentType())
 			return merrors.InternalServerError("go.micro.client", err.Error())
 		}
-		logger.Logf(log.TraceLevel, "create codec: reqCodec:%T ContentType:%v", reqCodec, req.ContentType())
+		//logger.Logf(log.TraceLevel, "create codec: reqCodec:%T ContentType:%v", reqCodec, req.ContentType())
 
 	}
 
@@ -151,10 +150,12 @@ func (r *rpcClient) call(
 	if opts.ConnClose {
 		dOpts = append(dOpts, transport.WithConnClose())
 	}
+	//logger.Logf(log.TraceLevel, "create codec: reqCodec:%T ContentType:%v address:%s", reqCodec, req.ContentType(), address)
 
 	c, err := r.pool.Get(address, dOpts...)
 	if err != nil {
 		if c == nil {
+			//logger.Logf(log.ErrorLevel, "create codec: reqCodec:%T ContentType:%v address:%s", reqCodec, req.ContentType(), address)
 			return merrors.InternalServerError("go.micro.client", "connection error: %v", err)
 		}
 		logger.Log(log.ErrorLevel, "failed to close pool", err)
@@ -162,7 +163,7 @@ func (r *rpcClient) call(
 
 	seq := atomic.AddUint64(&r.seq, 1) - 1
 	codec := newRPCCodec(msg, c, reqCodec, "")
-	logger.Logf(log.TraceLevel, "newRPCCodec reqCodec:%T codec:%T", reqCodec, codec)
+	//logger.Logf(log.TraceLevel, "newRPCCodec reqCodec:%T codec:%T", reqCodec, codec)
 	rsp := &rpcResponse{
 		socket: c,
 		codec:  codec,
@@ -214,10 +215,10 @@ func (r *rpcClient) call(
 			return
 		}
 
-		logger.Logf(log.TraceLevel, "recv stream Method %s %T stream:%T", req.Method(), resp, stream)
+		//logger.Logf(log.TraceLevel, "recv stream Method %s %T stream:%T", req.Method(), resp, stream)
 		// recv response
 		if err := stream.Recv(resp); err != nil {
-			logger.Logf(log.TraceLevel, "failed to recv stream %v %s", err, string(debug.Stack()))
+			//logger.Logf(log.TraceLevel, "failed to recv stream %v %s", err, string(debug.Stack()))
 			ch <- err
 			return
 		}
@@ -499,6 +500,7 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 
 		// select next node
 		node, err := next()
+		//log.Debugf("=== call node:%v err:%v", node, err)
 		service := request.Service()
 
 		if err != nil {

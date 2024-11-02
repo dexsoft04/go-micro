@@ -3,9 +3,7 @@ package jsonrpc
 import (
 	"encoding/json"
 	"fmt"
-	"go-micro.dev/v5/logger"
 	"io"
-	"runtime/debug"
 	"sync"
 
 	"go-micro.dev/v5/codec"
@@ -48,7 +46,7 @@ func newClientCodec(conn io.ReadWriteCloser) *clientCodec {
 }
 
 func (c *clientCodec) Write(m *codec.Message, b interface{}) error {
-	logger.Tracef("jsonrpc clientCodec Write b:%T %s", b, string(debug.Stack()))
+	//logger.Tracef("jsonrpc clientCodec Write b:%T %s", b, string(debug.Stack()))
 
 	c.Lock()
 	c.pending[m.Id] = m.Method
@@ -66,7 +64,7 @@ func (r *clientResponse) reset() {
 }
 
 func (c *clientCodec) ReadHeader(m *codec.Message) error {
-	logger.Tracef("jsonrpc clientCodec ReadHeader m.Type:%v %s", m.Type, string(debug.Stack()))
+	//logger.Tracef("jsonrpc clientCodec ReadHeader m.Type:%v %s", m.Type, string(debug.Stack()))
 
 	c.resp.reset()
 	if err := c.dec.Decode(&c.resp); err != nil {
@@ -94,7 +92,7 @@ func (c *clientCodec) ReadHeader(m *codec.Message) error {
 }
 
 func (c *clientCodec) ReadBody(x interface{}) error {
-	logger.Tracef("jsonrpc clientCodec ReadBody x:%T %s", x, string(debug.Stack()))
+	//logger.Tracef("jsonrpc clientCodec ReadBody x:%T %s", x, string(debug.Stack()))
 
 	if x == nil || c.resp.Result == nil {
 		return nil
