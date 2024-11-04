@@ -7,6 +7,7 @@ import (
 	"go-micro.dev/v5/metadata"
 	"io"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync"
 	"unicode"
@@ -236,7 +237,11 @@ func (s *service) call(ctx context.Context, router *router, sending *sync.Mutex,
 		fn := func(ctx context.Context, req Request, rsp interface{}) (err error) {
 			defer func() {
 				if r := recover(); r != nil {
-					log.Log(log.ErrorLevel, "deferer panic recovered: ", r)
+					buf := make([]byte, 1024)
+					n := runtime.Stack(buf, false)
+					fmt.Printf("Recovered from panic: %v\n", r)
+					fmt.Printf("Stack trace:\n%s\n", buf[:n])
+					log.Log(log.ErrorLevel, "deferer panic recovered: ", buf)
 					err = errors.New(fmt.Sprint(r))
 				}
 			}()
