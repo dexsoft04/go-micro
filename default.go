@@ -3,10 +3,12 @@ package micro
 import (
 	"github.com/philchia/agollo/v4"
 	"github.com/zigo2048/mcbeam-common-lib/common/config"
+	"github.com/zigo2048/mcbeam-common-lib/common/metrics"
 	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader"
 	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/debug"
 	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/wrapper"
 	"github.com/zigo2048/mcbeam-common-lib/plugins/config/apollo/v3"
+	"github.com/zigo2048/mcbeam-common-lib/plugins/prometheus/v3"
 	"go-micro.dev/v5/logger"
 	"go-micro.dev/v5/server"
 	"os"
@@ -14,6 +16,7 @@ import (
 
 	_ "github.com/micro/plugins/v5/broker/nats"
 	_ "github.com/micro/plugins/v5/registry/etcd"
+	metricsWrapper "github.com/zigo2048/mcbeam-common-lib/common/metrics/wrapper"
 )
 
 func initDefaultConfig() {
@@ -25,9 +28,14 @@ func initDefaultConfig() {
 		CacheDir:       filepath.Join(os.TempDir(), "apollo"),
 	}))
 
-	var err error
+	reporter, err := prometheus.New()
+	if nil != err {
+		logger.Fatal(err)
+	}
+	metrics.SetDefaultMetricsReporter(reporter)
 	err = server.DefaultServer.Init(
 		server.WrapHandler(debug.WrapperHandler),
+		server.WrapHandler(metricsWrapper.New(reporter).HandlerFunc),
 		server.WrapHandler(apiheader.NewDefaultHeaderHandlerWrapper),
 		server.WrapHandler(wrapper.AuthHandler()),
 	)

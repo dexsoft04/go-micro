@@ -3,7 +3,6 @@ package transport
 import (
 	"bufio"
 	"bytes"
-	"go-micro.dev/v5/logger"
 	"io"
 	"net"
 	"net/http"
@@ -52,10 +51,9 @@ func (h *httpTransportSocket) Recv(msg *Message) error {
 
 	if msg.Header == nil {
 		msg.Header = make(map[string]string, len(h.r.Header))
-		logger.Debugf("===============glod")
 	}
 
-	logger.Tracef("httpTransportSocket Recv %s ct:%s req:%v", msg.Header["Micro-Method"], msg.Header["Content-Type"], h.r)
+	//logger.Tracef("httpTransportSocket Recv %s ct:%s req:%v", msg.Header["Micro-Method"], msg.Header["Content-Type"], h.r)
 
 	if h.r.ProtoMajor == 1 {
 		return h.recvHTTP1(msg)
