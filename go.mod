@@ -23,6 +23,11 @@ require (
 )
 
 require (
+	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
+	google.golang.org/grpc v1.53.0 // indirect
+)
+
+require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
@@ -40,7 +45,7 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/zigo2048/mcbeam-common-lib/api/micro-v3/proto/api v0.0.0-20240830072932-574d8d198d5f // indirect
-	github.com/zigo2048/mcbeam-common-lib/plugins/prometheus/v3 v3.0.0-20241111062457-ed610dfc5f00 // indirect
+	github.com/zigo2048/mcbeam-common-lib/plugins/prometheus/v3 v3.0.0-20241111062457-ed610dfc5f00
 	go.etcd.io/etcd/api/v3 v3.5.2 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.2 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.2 // indirect
@@ -49,8 +54,6 @@ require (
 	go.uber.org/zap v1.23.0 // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
-	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
-	google.golang.org/grpc v1.53.0 // indirect
 )
 
 require (
@@ -63,7 +66,6 @@ require (
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
-	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
