@@ -1,30 +1,44 @@
 module go-micro.dev/v5
 
-go 1.21
+go 1.22.0
 
 require (
 	github.com/bitly/go-simplejson v0.5.1
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/golang/protobuf v1.5.4
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.6.0
 	github.com/imdario/mergo v0.3.13
+	github.com/micro/plugins/v5/wrapper/trace/opentelemetry v1.0.2
 	github.com/miekg/dns v1.1.50
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.25.7
 	github.com/zigo2048/mcbeam-common-lib/common/metrics v0.0.0-20241111061511-0a2707bc6939
 	github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader v0.0.0-20241010092605-2d5acd9d82f0
-	golang.org/x/crypto v0.24.0
-	golang.org/x/net v0.26.0
-	golang.org/x/sync v0.8.0
-	google.golang.org/protobuf v1.34.2
+	go.opentelemetry.io/otel v1.33.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.32.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.32.0
+	go.opentelemetry.io/otel/sdk v1.33.0
+	golang.org/x/crypto v0.31.0
+	golang.org/x/net v0.33.0
+	golang.org/x/sync v0.10.0
+	google.golang.org/protobuf v1.36.0
 )
 
 require (
-	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
-	google.golang.org/grpc v1.53.0 // indirect
+	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
+	github.com/go-logr/logr v1.4.2 // indirect
+	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.23.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/otel/metric v1.33.0 // indirect
+	go.opentelemetry.io/otel/trace v1.33.0 // indirect
+	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20241223144023-3abc09e42ca8 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241223144023-3abc09e42ca8 // indirect
+	google.golang.org/grpc v1.68.1 // indirect
 )
 
 require (
@@ -64,8 +78,8 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
-	golang.org/x/sys v0.22.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
