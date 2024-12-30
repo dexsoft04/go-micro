@@ -2,10 +2,13 @@ package micro
 
 import (
 	"context"
+	_ "github.com/micro/plugins/v5/broker/nats"
+	_ "github.com/micro/plugins/v5/registry/etcd"
 	"github.com/micro/plugins/v5/wrapper/trace/opentelemetry"
 	"github.com/philchia/agollo/v4"
 	"github.com/zigo2048/mcbeam-common-lib/common/config"
 	"github.com/zigo2048/mcbeam-common-lib/common/metrics"
+	metricsWrapper "github.com/zigo2048/mcbeam-common-lib/common/metrics/wrapper"
 	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader"
 	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/debug"
 	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/wrapper"
@@ -15,17 +18,14 @@ import (
 	"go-micro.dev/v5/logger"
 	"go-micro.dev/v5/server"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
+	"net"
 	"os"
 	"path/filepath"
-
-	_ "github.com/micro/plugins/v5/broker/nats"
-	_ "github.com/micro/plugins/v5/registry/etcd"
-	metricsWrapper "github.com/zigo2048/mcbeam-common-lib/common/metrics/wrapper"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	strings "strings"
 )
 
 func initDefaultConfig() {
@@ -68,10 +68,29 @@ func initDefaultConfig() {
 }
 
 func newExporter(ctx context.Context, address string) (trace.SpanExporter, error) {
-	client := otlptracehttp.NewClient(
-		otlptracehttp.WithEndpoint(address),
-	)
-	exporter, err := otlptrace.New(ctx, client)
+	var exporter trace.SpanExporter
+	var err error
+	if strings.HasPrefix(address, "http") {
+		//var endpoint otlptracehttp.Option
+		//endpoint = otlptracehttp.WithEndpointURL(address)
+		//if strings.HasPrefix(address, "https://") {
+		//	endpoint = otlptracehttp.WithEndpoint(address)
+		//}
+		//cli := otlptracehttp.NewClient(endpoint)
+		//exporter, err = otlptrace.New(ctx, cli)
+		//http://jaeger-collector.monitoring.svc.cluster.local:14268/api/traces
+		exporter, err = jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(address)))
+	} else {
+		//jaeger-agent.monitoring.svc.cluster.local:6831
+		host, port, err := net.SplitHostPort(address)
+		if nil != err {
+			return nil, err
+		}
+		logger.Infof("jaeger address, host:%s port:%s", host, port)
+		exporter, err = jaeger.New(
+			jaeger.WithAgentEndpoint(jaeger.WithAgentHost(host), jaeger.WithAgentPort(port)),
+		)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -82,13 +101,12 @@ func tracerProvider(url string) (*trace.TracerProvider, error) {
 	ctx := context.Background()
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
-			attribute.String("service.name", os.Getenv("MICRO_SERVICE_NAME")),
+			semconv.ServiceNameKey.String(os.Getenv("MICRO_SERVICE_NAME")),
 		),
 	)
 	if err != nil {
 		logger.Fatalf("error creating resource: %v", err)
 	}
-	logger.Infof("jaeger url:%s", url)
 	exporter, err := newExporter(ctx, url)
 	if nil != err {
 		logger.Fatalf("error creating exporter: %v", err)

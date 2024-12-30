@@ -18,6 +18,7 @@ require (
 	github.com/zigo2048/mcbeam-common-lib/common/metrics v0.0.0-20241111061511-0a2707bc6939
 	github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader v0.0.0-20241010092605-2d5acd9d82f0
 	go.opentelemetry.io/otel v1.33.0
+	go.opentelemetry.io/otel/exporters/jaeger v1.17.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.32.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.32.0
 	go.opentelemetry.io/otel/sdk v1.33.0
