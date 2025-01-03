@@ -37,22 +37,29 @@ func initDefaultConfig() {
 		CacheDir:       filepath.Join(os.TempDir(), "apollo"),
 	}))
 
+	reporterAddress := os.Getenv("MICRO_TRACING_REPORTER_ADDRESS")
+	if len(reporterAddress) > 0 {
+		tracer, err := tracerProvider(reporterAddress)
+		if nil != err {
+			logger.Fatalf("tracer provider error: %s reporterAddress:%s", err.Error(), reporterAddress)
+		}
+		otel.SetTracerProvider(tracer)
+		server.DefaultServer.Init(
+			server.WrapHandler(opentelemetry.NewHandlerWrapper()),
+			server.WrapSubscriber(opentelemetry.NewSubscriberWrapper()),
+		)
+		client.DefaultClient.Init(
+			client.Wrap(opentelemetry.NewClientWrapper()),
+		)
+	}
+
 	reporter, err := prometheus.New()
 	if nil != err {
 		logger.Fatal(err)
 	}
 	metrics.SetDefaultMetricsReporter(reporter)
 
-	reporterAddress := os.Getenv("MICRO_TRACING_REPORTER_ADDRESS")
-	tracer, err := tracerProvider(reporterAddress)
-	if nil != err {
-		logger.Fatalf("tracer provider error: %s reporterAddress:%s", err.Error(), reporterAddress)
-	}
-	otel.SetTracerProvider(tracer)
-
 	err = server.DefaultServer.Init(
-		server.WrapHandler(opentelemetry.NewHandlerWrapper()),
-		server.WrapSubscriber(opentelemetry.NewSubscriberWrapper()),
 		server.WrapHandler(debug.WrapperHandler),
 		server.WrapHandler(metricsWrapper.New(reporter).HandlerFunc),
 		server.WrapHandler(apiheader.NewDefaultHeaderHandlerWrapper),
@@ -61,23 +68,12 @@ func initDefaultConfig() {
 	if nil != err {
 		logger.Fatalf("init default server err:%s", err)
 	}
-
-	client.DefaultClient.Init(
-		client.Wrap(opentelemetry.NewClientWrapper()),
-	)
 }
 
 func newExporter(ctx context.Context, address string) (trace.SpanExporter, error) {
 	var exporter trace.SpanExporter
 	var err error
 	if strings.HasPrefix(address, "http") {
-		//var endpoint otlptracehttp.Option
-		//endpoint = otlptracehttp.WithEndpointURL(address)
-		//if strings.HasPrefix(address, "https://") {
-		//	endpoint = otlptracehttp.WithEndpoint(address)
-		//}
-		//cli := otlptracehttp.NewClient(endpoint)
-		//exporter, err = otlptrace.New(ctx, cli)
 		//http://jaeger-collector.monitoring.svc.cluster.local:14268/api/traces
 		exporter, err = jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(address)))
 	} else {
