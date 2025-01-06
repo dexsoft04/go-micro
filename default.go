@@ -28,6 +28,8 @@ import (
 	strings "strings"
 )
 
+const VersionStr = "v5.1.0-beta"
+
 func initDefaultConfig() {
 	config.DefaultConfig = apollo.NewConfig(apollo.WithConfig(&agollo.Conf{
 		AppID:          os.Getenv("MICRO_NAMESPACE"),
