@@ -19,6 +19,7 @@ import (
 	"go-micro.dev/v5/server"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
@@ -99,7 +100,8 @@ func tracerProvider(url string) (*trace.TracerProvider, error) {
 	ctx := context.Background()
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
-			semconv.ServiceNameKey.String(os.Getenv("MICRO_SERVICE_NAME")),
+			semconv.ServiceName(os.Getenv("MICRO_SERVICE_NAME")),
+			semconv.ServiceVersion(os.Getenv("MICRO_SERVER_VERSION")),
 		),
 	)
 	if err != nil {
@@ -109,6 +111,14 @@ func tracerProvider(url string) (*trace.TracerProvider, error) {
 	if nil != err {
 		logger.Fatalf("error creating exporter: %v", err)
 	}
+
+	propagator := propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	)
+
+	otel.SetTextMapPropagator(propagator)
+
 	// 创建TracerProvider
 	tp := trace.NewTracerProvider(
 		trace.WithBatcher(exporter),
