@@ -10,7 +10,6 @@ import (
 	"github.com/zigo2048/mcbeam-common-lib/common/metrics"
 	metricsWrapper "github.com/zigo2048/mcbeam-common-lib/common/metrics/wrapper"
 	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader"
-	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/debug"
 	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/wrapper"
 	"github.com/zigo2048/mcbeam-common-lib/plugins/config/apollo/v3"
 	"github.com/zigo2048/mcbeam-common-lib/plugins/prometheus/v3"
@@ -26,10 +25,8 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	strings "strings"
+	"strings"
 )
-
-const VersionStr = "v5.1.0-beta"
 
 func initDefaultConfig() {
 	config.DefaultConfig = apollo.NewConfig(apollo.WithConfig(&agollo.Conf{
@@ -63,7 +60,7 @@ func initDefaultConfig() {
 	metrics.SetDefaultMetricsReporter(reporter)
 
 	err = server.DefaultServer.Init(
-		server.WrapHandler(debug.WrapperHandler),
+		//server.WrapHandler(debug.WrapperHandler),
 		server.WrapHandler(metricsWrapper.New(reporter).HandlerFunc),
 		server.WrapHandler(apiheader.NewDefaultHeaderHandlerWrapper),
 		server.WrapHandler(wrapper.AuthHandler()),
@@ -79,6 +76,7 @@ func newExporter(ctx context.Context, address string) (trace.SpanExporter, error
 	if strings.HasPrefix(address, "http") {
 		//http://jaeger-collector.monitoring.svc.cluster.local:14268/api/traces
 		exporter, err = jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(address)))
+		//exporter, err = otlptracegrpc.New(ctx, otlptracegrpc.WithInsecure(), otlptracegrpc.WithEndpoint(address))
 	} else {
 		//jaeger-agent.monitoring.svc.cluster.local:6831
 		host, port, err := net.SplitHostPort(address)
@@ -89,8 +87,12 @@ func newExporter(ctx context.Context, address string) (trace.SpanExporter, error
 		exporter, err = jaeger.New(
 			jaeger.WithAgentEndpoint(jaeger.WithAgentHost(host), jaeger.WithAgentPort(port)),
 		)
+		//exporter, err = otlptracegrpc.New(ctx,
+		//	otlptracegrpc.WithAgentEndpoint(otlptracegrpc.WithAgentHost(host), otlptracegrpc.WithAgentPort(port)),
+		//)
 	}
 	if err != nil {
+		logger.Errorf("new Exporter err:%s", err.Error())
 		return nil, err
 	}
 	return exporter, nil
@@ -116,9 +118,7 @@ func tracerProvider(url string) (*trace.TracerProvider, error) {
 		propagation.TraceContext{},
 		propagation.Baggage{},
 	)
-
 	otel.SetTextMapPropagator(propagator)
-
 	// 创建TracerProvider
 	tp := trace.NewTracerProvider(
 		trace.WithBatcher(exporter),

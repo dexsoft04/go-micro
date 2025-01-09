@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go-micro.dev/v5/metadata"
 	"io"
 	"reflect"
 	"runtime"
@@ -219,12 +218,6 @@ func (s *service) call(ctx context.Context, router *router, sending *sync.Mutex,
 		endpoint:    req.msg.Endpoint,
 		body:        req.msg.Body,
 		header:      req.msg.Header,
-	}
-
-	if nil != req.msg && len(req.msg.Body) > 0 {
-		ctx = metadata.Set(ctx, "Micro-Raw-Body", string(req.msg.Body))
-	} else {
-		//log.Logf(log.TraceLevel, "call req %v %s", req, string(debug.Stack()))
 	}
 
 	// only set if not nil

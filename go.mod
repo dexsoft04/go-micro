@@ -1,6 +1,8 @@
 module go-micro.dev/v5
 
-go 1.22.0
+go 1.22.7
+
+toolchain go1.23.1
 
 require (
 	github.com/bitly/go-simplejson v0.5.1
@@ -32,6 +34,7 @@ require (
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel/metric v1.33.0 // indirect
 	go.opentelemetry.io/otel/trace v1.33.0 // indirect
+	go.uber.org/goleak v1.3.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241223144023-3abc09e42ca8 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241223144023-3abc09e42ca8 // indirect
 	google.golang.org/grpc v1.68.1 // indirect
@@ -87,7 +90,6 @@ require (
 	github.com/micro/plugins/v5/registry/etcd v1.0.2
 	github.com/zigo2048/mcbeam-common-lib/common/config v0.0.0-20240830024144-c49e5068b3c1
 	github.com/zigo2048/mcbeam-common-lib/common/uauth v0.0.0-20240929034241-c9297526a163 // indirect
-	github.com/zigo2048/mcbeam-common-lib/common/wrapper/debug v0.0.0-20240929114423-dc0f7443e7a9
 	github.com/zigo2048/mcbeam-common-lib/common/wrapper/wrapper v0.0.0-20240929114423-dc0f7443e7a9
 	github.com/zigo2048/mcbeam-common-lib/plugins/config/apollo/v3 v3.0.0-20240929031309-0deb899bd6ef
 )
