@@ -157,7 +157,7 @@ func (c *Codec) String() string {
 }
 
 func NewCodec(c io.ReadWriteCloser) codec.Codec {
-	logger.Debugf("grpc NewCodec NewCodec %s", string(debug.Stack()))
+	//logger.Debugf("grpc NewCodec NewCodec %s", string(debug.Stack()))
 	return &Codec{
 		Conn:        c,
 		ContentType: "application/grpc",

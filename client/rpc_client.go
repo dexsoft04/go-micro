@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"fmt"
-	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -69,7 +68,7 @@ func newRPCClient(opt ...Option) Client {
 }
 
 func (r *rpcClient) newCodec(contentType string) (codec.NewCodec, error) {
-	log.Debugf("newCode %s %s", contentType, string(debug.Stack()))
+	//log.Debugf("newCode %s %s", contentType, string(debug.Stack()))
 	if c, ok := r.opts.Codecs[contentType]; ok {
 		return c, nil
 	}

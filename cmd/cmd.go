@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
-	"runtime/debug"
 	"strings"
 	"time"
 
@@ -368,7 +367,7 @@ func (c *cmd) Before(ctx *cli.Context) error {
 	var serverOpts []server.Option
 	var clientOpts []client.Option
 
-	logger.Logf(logger.TraceLevel, "before %s", string(debug.Stack()))
+	//logger.Logf(logger.TraceLevel, "before %s", string(debug.Stack()))
 	// Set the client
 	if name := ctx.String("client"); len(name) > 0 {
 		// only change if we have the client and type differs
