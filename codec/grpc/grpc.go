@@ -30,7 +30,7 @@ func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
 		c.ContentType = ct
 	}
 
-	//logger.Tracef("grpc ReadHeader ContentType:%v %s t:%v %s", m.Header["Content-Type"], c.ContentType, t, string(debug.Stack()))
+	//logger.Debugf("grpc ReadHeader ContentType:%v %s t:%v %s", m.Header["Content-Type"], c.ContentType, t, string(debug.Stack()))
 
 	// service method
 	path := m.Header[":path"]
@@ -157,6 +157,7 @@ func (c *Codec) String() string {
 }
 
 func NewCodec(c io.ReadWriteCloser) codec.Codec {
+	logger.Debugf("grpc NewCodec NewCodec %s", string(debug.Stack()))
 	return &Codec{
 		Conn:        c,
 		ContentType: "application/grpc",

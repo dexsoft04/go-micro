@@ -4,6 +4,7 @@ import (
 	"bytes"
 	errs "errors"
 	"go-micro.dev/v5/logger"
+	"runtime/debug"
 
 	"go-micro.dev/v5/codec"
 	raw "go-micro.dev/v5/codec/bytes"
@@ -136,10 +137,13 @@ func setHeaders(m *codec.Message, stream string) {
 
 // setupProtocol sets up the old protocol.
 func setupProtocol(msg *transport.Message, node *registry.Node) codec.NewCodec {
-
-	//for k, v := range node.Metadata {
-	//logger.Tracef("setupProtocol node.metadata[%q] = %q", k, v)
-	//}
+	logger.Debugf("setupProtocol %s", string(debug.Stack()))
+	for k, v := range node.Metadata {
+		logger.Debugf("setupProtocol node.metadata[%q] = %q", k, v)
+	}
+	for k, v := range msg.Header {
+		logger.Debugf("setupProtocol Header[%q] = %q", k, v)
+	}
 	protocol := node.Metadata["protocol"]
 
 	// got protocol
@@ -272,6 +276,7 @@ func (c *rpcCodec) ReadBody(b interface{}) error {
 
 	//logger.Tracef("rpcCodec ReadBody %T", c.codec)
 	if err := c.codec.ReadBody(b); err != nil {
+		logger.Errorf("go.micro.client.codec 22222", "%s c.codec[%s]", err.Error(), c.codec.String())
 		return errors.InternalServerError("go.micro.client.codec 22222", "%s c.codec[%s]", err.Error(), c.codec.String())
 	}
 

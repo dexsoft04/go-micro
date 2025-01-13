@@ -570,6 +570,14 @@ func (c *cmd) Before(ctx *cli.Context) error {
 			logger.Fatalf("Error configuring registry: %v", err)
 		}
 	}
+	if len(ctx.String("transport")) > 0 {
+		if ts := ctx.String("transport"); ts != "" {
+			if fn, ok := DefaultTransports[ts]; ok {
+				tt := fn()
+				c.opts.Transport = &tt
+			}
+		}
+	}
 
 	if len(ctx.String("transport_address")) > 0 {
 		if err := (*c.opts.Transport).Init(transport.Addrs(strings.Split(ctx.String("transport_address"), ",")...)); err != nil {

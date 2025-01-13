@@ -16,6 +16,7 @@ import (
 	"go-micro.dev/v5/client"
 	"go-micro.dev/v5/logger"
 	"go-micro.dev/v5/server"
+	_ "go-micro.dev/v5/transport/grpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/propagation"
