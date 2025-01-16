@@ -782,12 +782,15 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 		resp interface{},
 		opts CallOptions,
 	) error {
+		//for k, v := range node.Metadata {
+		//	log.Debugf("Call %s %s %s", req.Service(), k, v)
+		//}
 		if ts, ok := node.Metadata["transport"]; ok {
-			if ts == "http" {
-				return r.call(ctx, node, req, resp, opts)
+			if ts == "grpc" {
+				return r.grpcCall(ctx, node, req, resp, opts)
 			}
 		}
-		return r.grpcCall(ctx, node, req, resp, opts)
+		return r.call(ctx, node, req, resp, opts)
 	}
 
 	// make copy of call method
@@ -930,13 +933,13 @@ func (r *rpcClient) Stream(ctx context.Context, request Request, opts ...CallOpt
 		}
 
 		if v, ok := node.Metadata["transport"]; ok {
-			if v == "http" {
-				stream, err := r.stream(ctx, node, request, callOpts)
+			if v == "grpc" {
+				stream, err := r.grpcStream(ctx, node, request, callOpts)
 				r.opts.Selector.Mark(service, node, err)
 				return stream, err
 			}
 		}
-		stream, err := r.grpcStream(ctx, node, request, callOpts)
+		stream, err := r.stream(ctx, node, request, callOpts)
 		r.opts.Selector.Mark(service, node, err)
 		return stream, err
 	}

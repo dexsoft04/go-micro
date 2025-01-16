@@ -239,7 +239,7 @@ func (c *rpcCodec) ReadHeader(msg *codec.Message, r codec.MessageType) error {
 
 	// read message from transport
 	if err := c.client.Recv(&tm); err != nil {
-		logger.Errorf("go.micro.client.transport %v %s %v", msg, msg.Header["Content-Type"], err.Error())
+		logger.Errorf("go.micro.client.transport client:%T msgType:%v ct:%s err:%v", c.client, msg.Type, msg.Header["Content-Type"], err.Error())
 		return errors.InternalServerError("go.micro.client.transport 666", err.Error())
 	}
 
