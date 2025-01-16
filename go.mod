@@ -1,8 +1,6 @@
 module go-micro.dev/v5
 
-go 1.22.7
-
-toolchain go1.23.1
+go 1.22.0
 
 require (
 	github.com/bitly/go-simplejson v0.5.1
@@ -25,6 +23,7 @@ require (
 	golang.org/x/crypto v0.31.0
 	golang.org/x/net v0.33.0
 	golang.org/x/sync v0.10.0
+	google.golang.org/grpc v1.68.1
 	google.golang.org/protobuf v1.36.0
 )
 
@@ -37,7 +36,6 @@ require (
 	go.uber.org/goleak v1.3.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241223144023-3abc09e42ca8 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241223144023-3abc09e42ca8 // indirect
-	google.golang.org/grpc v1.68.1 // indirect
 )
 
 require (
@@ -57,7 +55,7 @@ require (
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
-	github.com/zigo2048/mcbeam-common-lib/api/micro-v3/proto/api v0.0.0-20240830072932-574d8d198d5f // indirect
+	github.com/zigo2048/mcbeam-common-lib/api/micro-v3/proto/api v0.0.0-20240830072932-574d8d198d5f
 	github.com/zigo2048/mcbeam-common-lib/plugins/prometheus/v3 v3.0.0-20241111062457-ed610dfc5f00
 	go.etcd.io/etcd/api/v3 v3.5.2 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.2 // indirect
@@ -88,8 +86,8 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/micro/plugins/v5/broker/nats v1.0.2
 	github.com/micro/plugins/v5/registry/etcd v1.0.2
-	github.com/zigo2048/mcbeam-common-lib/common/config v0.0.0-20240830024144-c49e5068b3c1
-	github.com/zigo2048/mcbeam-common-lib/common/uauth v0.0.0-20240929034241-c9297526a163 // indirect
-	github.com/zigo2048/mcbeam-common-lib/common/wrapper/wrapper v0.0.0-20240929114423-dc0f7443e7a9
-	github.com/zigo2048/mcbeam-common-lib/plugins/config/apollo/v3 v3.0.0-20240929031309-0deb899bd6ef
+	github.com/zigo2048/mcbeam-common-lib/common/config v0.0.0-20250113074621-add8dd6915b0
+	github.com/zigo2048/mcbeam-common-lib/common/uauth v0.0.0-20250113074621-add8dd6915b0 // indirect
+	github.com/zigo2048/mcbeam-common-lib/common/wrapper/wrapper v0.0.0-20250113074621-add8dd6915b0
+	github.com/zigo2048/mcbeam-common-lib/plugins/config/apollo/v3 v3.0.0-20250113074621-add8dd6915b0
 )

@@ -499,7 +499,18 @@ func (c *cmd) Before(ctx *cli.Context) error {
 
 		*c.opts.Transport = t()
 		serverOpts = append(serverOpts, server.Transport(*c.opts.Transport))
-		clientOpts = append(clientOpts, client.Transport(*c.opts.Transport))
+		//clientOpts = append(clientOpts, client.Transport(*c.opts.Transport))
+	}
+	if true {
+		t, ok := DefaultTransports["grpc"]
+		if !ok {
+			return fmt.Errorf("Transport %s not found", "grpc")
+		}
+		transport.DefaultGrpcTransport = t()
+		clientOpts = append(clientOpts, client.GrpcTransport(transport.DefaultGrpcTransport))
+
+		tt := transport.NewHTTPTransport()
+		clientOpts = append(clientOpts, client.Transport(tt))
 	}
 
 	// Parse the server options

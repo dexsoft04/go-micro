@@ -6,6 +6,7 @@ import (
 
 	"go-micro.dev/v5/client"
 	"go-micro.dev/v5/server"
+	_ "go-micro.dev/v5/transport/grpc"
 )
 
 func init() {

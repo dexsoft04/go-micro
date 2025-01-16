@@ -2,8 +2,6 @@ package micro
 
 import (
 	"context"
-	_ "github.com/micro/plugins/v5/broker/nats"
-	_ "github.com/micro/plugins/v5/registry/etcd"
 	"github.com/micro/plugins/v5/wrapper/trace/opentelemetry"
 	"github.com/philchia/agollo/v4"
 	"github.com/zigo2048/mcbeam-common-lib/common/config"
@@ -16,17 +14,21 @@ import (
 	"go-micro.dev/v5/client"
 	"go-micro.dev/v5/logger"
 	"go-micro.dev/v5/server"
-	_ "go-micro.dev/v5/transport/grpc"
+	"net"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
-	"net"
-	"os"
-	"path/filepath"
-	"strings"
+
+	_ "github.com/micro/plugins/v5/broker/nats"
+	_ "github.com/micro/plugins/v5/registry/etcd"
+	_ "go-micro.dev/v5/transport/grpc"
 )
 
 func initDefaultConfig() {
