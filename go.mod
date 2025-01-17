@@ -8,15 +8,12 @@ require (
 	github.com/golang/protobuf v1.5.4
 	github.com/google/uuid v1.6.0
 	github.com/imdario/mergo v0.3.13
-	github.com/micro/plugins/v5/wrapper/trace/opentelemetry v1.0.2
 	github.com/miekg/dns v1.1.50
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.25.7
-	github.com/zigo2048/mcbeam-common-lib/common/metrics v0.0.0-20241111061511-0a2707bc6939
-	github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader v0.0.0-20241010092605-2d5acd9d82f0
 	go.opentelemetry.io/otel v1.33.0
 	go.opentelemetry.io/otel/exporters/jaeger v1.17.0
 	go.opentelemetry.io/otel/sdk v1.33.0
@@ -28,12 +25,18 @@ require (
 )
 
 require (
+	github.com/bytedance/sonic v1.12.7 // indirect
+	github.com/bytedance/sonic/loader v0.2.2 // indirect
+	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
+	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel/metric v1.33.0 // indirect
 	go.opentelemetry.io/otel/trace v1.33.0 // indirect
 	go.uber.org/goleak v1.3.0 // indirect
+	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241223144023-3abc09e42ca8 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241223144023-3abc09e42ca8 // indirect
 )
@@ -86,8 +89,11 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/micro/plugins/v5/broker/nats v1.0.2
 	github.com/micro/plugins/v5/registry/etcd v1.0.2
-	github.com/zigo2048/mcbeam-common-lib/common/config v0.0.0-20250113074621-add8dd6915b0
+	github.com/micro/plugins/v5/wrapper/trace/opentelemetry v1.0.2
+	github.com/zigo2048/mcbeam-common-lib/common/config v0.0.0-20250117034355-650d559adeba
+	github.com/zigo2048/mcbeam-common-lib/common/metrics v0.0.0-20250117034355-650d559adeba
 	github.com/zigo2048/mcbeam-common-lib/common/uauth v0.0.0-20250113074621-add8dd6915b0 // indirect
-	github.com/zigo2048/mcbeam-common-lib/common/wrapper/wrapper v0.0.0-20250113074621-add8dd6915b0
+	github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader v0.0.0-20250117034355-650d559adeba
+	github.com/zigo2048/mcbeam-common-lib/common/wrapper/wrapper v0.0.0-20250117034355-650d559adeba
 	github.com/zigo2048/mcbeam-common-lib/plugins/config/apollo/v3 v3.0.0-20250113074621-add8dd6915b0
 )

@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -38,6 +39,8 @@ type rpcClient struct {
 	seq uint64
 
 	mu sync.RWMutex
+
+	transportCache sync.Map
 }
 
 func newRPCClient(opt ...Option) Client {
@@ -785,12 +788,29 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 		//for k, v := range node.Metadata {
 		//	log.Debugf("Call %s %s %s", req.Service(), k, v)
 		//}
-		if ts, ok := node.Metadata["transport"]; ok {
-			if ts == "grpc" {
-				return r.grpcCall(ctx, node, req, resp, opts)
+		ts, ok := node.Metadata["transport"]
+		if !ok {
+			if v, ok := r.transportCache.Load(node.Id); ok {
+				ts = v.(string)
 			}
 		}
-		return r.call(ctx, node, req, resp, opts)
+		if ts == "grpc" {
+			return r.grpcCall(ctx, node, req, resp, opts)
+		}
+		err = r.call(ctx, node, req, resp, opts)
+		if ts == "" && err != nil {
+			if ve, ok := err.(*merrors.Error); ok && nil != ve && ve.Code == 500 && strings.Contains(ve.Detail, "malformed HTTP") {
+				log.Debugf("call err:%T %s", err, err.Error())
+				err = r.grpcCall(ctx, node, req, resp, opts)
+				if err != nil {
+					return err
+				}
+				ts = "grpc"
+				log.Infof("detect transport %s %s", req.Service(), node.Id)
+				r.transportCache.Store(node.Id, ts)
+			}
+		}
+		return err
 	}
 
 	// make copy of call method
@@ -932,14 +952,32 @@ func (r *rpcClient) Stream(ctx context.Context, request Request, opts ...CallOpt
 				err.Error())
 		}
 
-		if v, ok := node.Metadata["transport"]; ok {
-			if v == "grpc" {
-				stream, err := r.grpcStream(ctx, node, request, callOpts)
-				r.opts.Selector.Mark(service, node, err)
-				return stream, err
+		ts, ok := node.Metadata["transport"]
+		if !ok {
+			if v, ok := r.transportCache.Load(node.Id); ok {
+				ts = v.(string)
 			}
 		}
+
+		if ts == "grpc" {
+			stream, err := r.grpcStream(ctx, node, request, callOpts)
+			r.opts.Selector.Mark(service, node, err)
+			return stream, err
+		}
 		stream, err := r.stream(ctx, node, request, callOpts)
+		if ts == "" && err != nil {
+			if ts == "" && err != nil {
+				if ve, ok := err.(*merrors.Error); ok && nil != ve && ve.Code == 500 && strings.Contains(ve.Detail, "malformed HTTP") {
+					log.Infof("stream err:%s transport %s %s", err.Error(), request.Service(), node.Id)
+					stream, err = r.grpcStream(ctx, node, request, callOpts)
+					if err == nil {
+						ts = "grpc"
+						log.Infof("detect transport %s %s %s", request.Service(), node.Id, ts)
+						r.transportCache.Store(node.Id, ts)
+					}
+				}
+			}
+		}
 		r.opts.Selector.Mark(service, node, err)
 		return stream, err
 	}
