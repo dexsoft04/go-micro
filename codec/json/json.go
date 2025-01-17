@@ -24,15 +24,12 @@ func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
 
 func (c *Codec) ReadBody(b interface{}) error {
 	if b == nil {
-		logger.Tracef("json ReadBody nil b %v", b)
 		return nil
 	}
 	if pb, ok := b.(proto.Message); ok {
-		//logger.Tracef("jsonpb ReadBody %T %s", b, string(debug.Stack()))
 		marshaller := jsonpb.Unmarshaler{AllowUnknownFields: true}
 		return marshaller.UnmarshalNext(c.Decoder, pb)
 	}
-	logger.Tracef("json ReadBody %T", b)
 	return c.Decoder.Decode(b)
 }
 
@@ -43,9 +40,10 @@ func (c *Codec) Write(m *codec.Message, b interface{}) error {
 
 	if jb, ok := b.(*json.RawMessage); ok {
 		xx, err := jb.MarshalJSON()
-		logger.Tracef("json MarshalJSON %v %v", string(xx), err)
+		if nil != err {
+			logger.Errorf("json MarshalJSON %v %v", string(xx), err)
+		}
 	}
-	//logger.Tracef("json Write %T %s", b, string(debug.Stack()))
 	return c.Encoder.Encode(b)
 }
 

@@ -72,7 +72,6 @@ func (c *Codec) ReadBody(b interface{}) error {
 		//logger.Tracef("grpc ReadHeader proto ContentType:%v b:%T %s", c.ContentType, b, string(debug.Stack()))
 		return proto.Unmarshal(buf, b.(proto.Message))
 	}
-	//logger.Tracef("grpc ReadHeader ContentType:%v Unsupported b:%T %s", c.ContentType, b, string(debug.Stack()))
 	return errors.New("Unsupported Content-Type")
 }
 
@@ -87,7 +86,6 @@ func (c *Codec) Write(m *codec.Message, b interface{}) error {
 	if ct := m.Header["content-type"]; len(ct) > 0 {
 		c.ContentType = ct
 	}
-	//logger.Tracef("grpc Write ContentType:%v %s b:%T m.Type:%v %s", m.Header["Content-Type"], c.ContentType, b, m.Type, string(debug.Stack()))
 
 	switch m.Type {
 	case codec.Request:
@@ -157,7 +155,6 @@ func (c *Codec) String() string {
 }
 
 func NewCodec(c io.ReadWriteCloser) codec.Codec {
-	//logger.Debugf("grpc NewCodec NewCodec %s", string(debug.Stack()))
 	return &Codec{
 		Conn:        c,
 		ContentType: "application/grpc",
