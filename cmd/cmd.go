@@ -374,6 +374,8 @@ func (c *cmd) Before(ctx *cli.Context) error {
 		if cl, ok := c.opts.Clients[name]; ok && (*c.opts.Client).String() != name {
 			*c.opts.Client = cl()
 		}
+	} else {
+		*c.opts.Client = client.NewClient()
 	}
 
 	// Set the server
@@ -678,6 +680,7 @@ func (c *cmd) Before(ctx *cli.Context) error {
 		clientOpts = append(clientOpts, client.PoolCloseTimeout(d))
 	}
 
+	initConfig(ctx, c.opts.Client, c.opts.Server)
 	// We have some command line opts for the server.
 	// Lets set it up
 	if len(serverOpts) > 0 {

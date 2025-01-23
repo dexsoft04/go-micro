@@ -800,7 +800,9 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 		err = r.call(ctx, node, req, resp, opts)
 		if ts == "" && err != nil {
 			if ve, ok := err.(*merrors.Error); ok && nil != ve && ve.Code == 500 && strings.Contains(ve.Detail, "malformed HTTP") {
-				log.Debugf("call err:%T %s", err, err.Error())
+				for k, v := range node.Metadata {
+					log.Debugf("=== Call node.Metadata %s %s %s", req.Service(), k, v)
+				}
 				err = r.grpcCall(ctx, node, req, resp, opts)
 				if err != nil {
 					return err
@@ -808,6 +810,8 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 				ts = "grpc"
 				log.Infof("detect transport %s %s", req.Service(), node.Id)
 				r.transportCache.Store(node.Id, ts)
+			} else {
+				log.Debugf("call err:%T service:%s %s serverId:%s addr:%s %s", err, request.Service(), req.Endpoint(), node.Id, node.Address, err.Error())
 			}
 		}
 		return err
