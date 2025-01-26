@@ -155,7 +155,6 @@ func setupProtocol(msg *transport.Message, node *registry.Node) codec.NewCodec {
 		msg.Header["Content-Type"] = "application/proto-rpc"
 	}
 
-	logger.Debugf("== setup protocl %s %v", protocol, msg.Header["Content-Type"])
 	return defaultCodecs[msg.Header["Content-Type"]]
 }
 

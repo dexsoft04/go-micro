@@ -39,13 +39,6 @@ func initConfig(ctx *cli.Context, cli *client.Client, srv *server.Server) error 
 		if nil != err {
 			return err
 		}
-
-		err = (*cli).Init(
-			client.WrapCall(opentelemetry.NewCallWrapper()),
-		)
-		if nil != err {
-			return err
-		}
 	}
 
 	reporter, err := prometheus.New()
