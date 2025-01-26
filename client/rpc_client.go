@@ -77,7 +77,6 @@ func newRPCClient(opt ...Option) Client {
 }
 
 func (r *rpcClient) newCodec(contentType string) (codec.NewCodec, error) {
-	//log.Debugf("newCode %s %s", contentType, string(debug.Stack()))
 	if c, ok := r.opts.Codecs[contentType]; ok {
 		return c, nil
 	}
@@ -140,13 +139,10 @@ func (r *rpcClient) call(
 	if reqCodec == nil {
 		var err error
 		reqCodec, err = r.newCodec(req.ContentType())
-
 		if err != nil {
 			logger.Log(log.ErrorLevel, "failed to create codec: %v ContentType:%v", err, req.ContentType())
 			return merrors.InternalServerError("go.micro.client", err.Error())
 		}
-		//logger.Logf(log.TraceLevel, "create codec: reqCodec:%T ContentType:%v", reqCodec, req.ContentType())
-
 	}
 
 	dOpts := []transport.DialOption{
@@ -160,12 +156,10 @@ func (r *rpcClient) call(
 	if opts.ConnClose {
 		dOpts = append(dOpts, transport.WithConnClose())
 	}
-	//logger.Logf(log.TraceLevel, "create codec: reqCodec:%T ContentType:%v address:%s", reqCodec, req.ContentType(), address)
 
 	c, err := r.pool.Get(address, dOpts...)
 	if err != nil {
 		if c == nil {
-			//logger.Logf(log.ErrorLevel, "create codec: reqCodec:%T ContentType:%v address:%s", reqCodec, req.ContentType(), address)
 			return merrors.InternalServerError("go.micro.client", "connection error: %v", err)
 		}
 		logger.Log(log.ErrorLevel, "failed to close pool", err)
@@ -173,7 +167,6 @@ func (r *rpcClient) call(
 
 	seq := atomic.AddUint64(&r.seq, 1) - 1
 	codec := newRPCCodec(msg, c, reqCodec, "")
-	//logger.Logf(log.TraceLevel, "newRPCCodec reqCodec:%T codec:%T", reqCodec, codec)
 	rsp := &rpcResponse{
 		socket: c,
 		codec:  codec,
@@ -309,13 +302,10 @@ func (r *rpcClient) grpcCall(
 	if reqCodec == nil {
 		var err error
 		reqCodec, err = r.newCodec(req.ContentType())
-
 		if err != nil {
 			logger.Log(log.ErrorLevel, "failed to create codec: %v ContentType:%v", err, req.ContentType())
 			return merrors.InternalServerError("go.micro.client", err.Error())
 		}
-		//logger.Logf(log.TraceLevel, "create codec: reqCodec:%T ContentType:%v", reqCodec, req.ContentType())
-
 	}
 
 	dOpts := []transport.DialOption{
@@ -329,12 +319,10 @@ func (r *rpcClient) grpcCall(
 	if opts.ConnClose {
 		dOpts = append(dOpts, transport.WithConnClose())
 	}
-	//logger.Logf(log.TraceLevel, "create codec: reqCodec:%T ContentType:%v address:%s", reqCodec, req.ContentType(), address)
 
 	c, err := r.grpcPool.Get(address, dOpts...)
 	if err != nil {
 		if c == nil {
-			//logger.Logf(log.ErrorLevel, "create codec: reqCodec:%T ContentType:%v address:%s", reqCodec, req.ContentType(), address)
 			return merrors.InternalServerError("go.micro.client", "grpc connection error: %v", err)
 		}
 		logger.Log(log.ErrorLevel, "failed to close pool", err)

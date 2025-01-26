@@ -278,6 +278,7 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 
 		// No legacy codec needed
 		if cf == nil {
+
 			var err error
 			// Try get a new codec
 			if cf, err = s.newCodec(contentType); err != nil {

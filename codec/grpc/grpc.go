@@ -21,7 +21,6 @@ type Codec struct {
 }
 
 func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
-
 	if ct := m.Header["Content-Type"]; len(ct) > 0 {
 		c.ContentType = ct
 	}
@@ -29,8 +28,6 @@ func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
 	if ct := m.Header["content-type"]; len(ct) > 0 {
 		c.ContentType = ct
 	}
-
-	//logger.Debugf("grpc ReadHeader ContentType:%v %s t:%v %s", m.Header["Content-Type"], c.ContentType, t, string(debug.Stack()))
 
 	// service method
 	path := m.Header[":path"]
@@ -54,7 +51,6 @@ func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
 func (c *Codec) ReadBody(b interface{}) error {
 	// no body
 	if b == nil {
-		//logger.Tracef("grpc ReadHeader ContentType:%v nil b:%T %s", c.ContentType, b, string(debug.Stack()))
 		return nil
 	}
 
@@ -66,7 +62,6 @@ func (c *Codec) ReadBody(b interface{}) error {
 
 	switch c.ContentType {
 	case "application/grpc+json":
-		//logger.Tracef("grpc ReadHeader json ContentType:%v b:%T %s", c.ContentType, b, string(debug.Stack()))
 		return json.Unmarshal(buf, b)
 	case "application/grpc+proto", "application/grpc":
 		//logger.Tracef("grpc ReadHeader proto ContentType:%v b:%T %s", c.ContentType, b, string(debug.Stack()))

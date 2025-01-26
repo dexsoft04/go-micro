@@ -135,13 +135,6 @@ func setHeaders(m *codec.Message, stream string) {
 
 // setupProtocol sets up the old protocol.
 func setupProtocol(msg *transport.Message, node *registry.Node) codec.NewCodec {
-	//logger.Debugf("setupProtocol %s", string(debug.Stack()))
-	//for k, v := range node.Metadata {
-	//	logger.Debugf("setupProtocol node.metadata[%q] = %q", k, v)
-	//}
-	//for k, v := range msg.Header {
-	//	logger.Debugf("setupProtocol Header[%q] = %q", k, v)
-	//}
 	protocol := node.Metadata["protocol"]
 
 	// got protocol
@@ -162,6 +155,7 @@ func setupProtocol(msg *transport.Message, node *registry.Node) codec.NewCodec {
 		msg.Header["Content-Type"] = "application/proto-rpc"
 	}
 
+	logger.Debugf("== setup protocl %s %v", protocol, msg.Header["Content-Type"])
 	return defaultCodecs[msg.Header["Content-Type"]]
 }
 

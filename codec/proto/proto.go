@@ -21,7 +21,6 @@ func (c *Codec) ReadBody(b interface{}) error {
 	if b == nil {
 		return nil
 	}
-	//logger.Tracef("proto ReadBody b:%T %s", b, string(debug.Stack()))
 
 	buf, err := io.ReadAll(c.Conn)
 	if err != nil {
@@ -35,7 +34,6 @@ func (c *Codec) ReadBody(b interface{}) error {
 }
 
 func (c *Codec) Write(m *codec.Message, b interface{}) error {
-	//logger.Tracef("proto Write b:%T m.Type:%v %s", b, m.Type, string(debug.Stack()))
 	if b == nil {
 		// Nothing to write
 		return nil
