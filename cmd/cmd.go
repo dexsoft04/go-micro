@@ -374,8 +374,6 @@ func (c *cmd) Before(ctx *cli.Context) error {
 		if cl, ok := c.opts.Clients[name]; ok && (*c.opts.Client).String() != name {
 			*c.opts.Client = cl()
 		}
-	} else {
-		*c.opts.Client = client.NewClient()
 	}
 
 	// Set the server
@@ -503,6 +501,7 @@ func (c *cmd) Before(ctx *cli.Context) error {
 		serverOpts = append(serverOpts, server.Transport(*c.opts.Transport))
 		//clientOpts = append(clientOpts, client.Transport(*c.opts.Transport))
 	}
+
 	if true {
 		t, ok := DefaultTransports["grpc"]
 		if !ok {

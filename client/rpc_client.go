@@ -58,7 +58,6 @@ func newRPCClient(opt ...Option) Client {
 	//	pool.Transport(opts.GrpcTransport),
 	//	pool.CloseTimeout(opts.PoolCloseTimeout),
 	//)
-	log.Tracef("newRPCClient opts.Transport %T", opts.Transport)
 	rc := &rpcClient{
 		opts: opts,
 		pool: p,
@@ -663,6 +662,7 @@ func (r *rpcClient) Init(opts ...Option) error {
 	size := r.opts.PoolSize
 	ttl := r.opts.PoolTTL
 	tr := r.opts.Transport
+	gr := r.opts.GrpcTransport
 
 	for _, o := range opts {
 		o(&r.opts)
@@ -682,7 +682,13 @@ func (r *rpcClient) Init(opts ...Option) error {
 			pool.Transport(r.opts.Transport),
 		)
 	}
-	if r.opts.GrpcTransport != nil && r.grpcPool == nil {
+	if size != r.opts.PoolSize || ttl != r.opts.PoolTTL || r.opts.GrpcTransport != gr {
+		if r.grpcPool != nil {
+			if err := r.grpcPool.Close(); err != nil {
+				return errors.Wrap(err, "failed to close grpc pool")
+			}
+		}
+
 		log.Debugf("==== grpc poll %v", r.opts.GrpcTransport.String())
 		r.grpcPool = pool.NewPool(
 			pool.Size(r.opts.PoolSize),

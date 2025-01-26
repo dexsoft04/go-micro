@@ -24,10 +24,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 )
 
-func init() {
-	client.DefaultWrappers = append(client.DefaultWrappers, opentelemetry.NewClientWrapper())
-}
-
 func initConfig(ctx *cli.Context, cli *client.Client, srv *server.Server) error {
 	reporterAddress := os.Getenv("MICRO_TRACING_REPORTER_ADDRESS")
 	if len(reporterAddress) > 0 {
@@ -43,13 +39,13 @@ func initConfig(ctx *cli.Context, cli *client.Client, srv *server.Server) error 
 		if nil != err {
 			return err
 		}
-		//
-		//err = (*cli).Init(
-		//	client.WrapCall(opentelemetry.NewCallWrapper()),
-		//)
-		//if nil != err {
-		//	return err
-		//}
+
+		err = (*cli).Init(
+			client.WrapCall(opentelemetry.NewCallWrapper()),
+		)
+		if nil != err {
+			return err
+		}
 	}
 
 	reporter, err := prometheus.New()

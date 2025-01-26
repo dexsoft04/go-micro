@@ -29,8 +29,6 @@ var (
 	DefaultPoolTTL = time.Minute
 	// DefaultPoolCloseTimeout sets the connection pool colse timeout.
 	DefaultPoolCloseTimeout = time.Second
-	// DefaultWrappers sets the client wrappers
-	DefaultWrappers = []Wrapper{}
 )
 
 // Options are the Client options.
@@ -155,7 +153,6 @@ func NewOptions(options ...Option) Options {
 		GrpcTransport:    transport.DefaultGrpcTransport,
 		Transport:        transport.DefaultTransport,
 		Logger:           logger.DefaultLogger,
-		Wrappers:         DefaultWrappers,
 	}
 
 	for _, o := range options {
