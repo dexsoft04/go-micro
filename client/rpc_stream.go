@@ -60,7 +60,7 @@ func (r *rpcStream) Send(msg interface{}) error {
 		r.err = errShutdown
 		return errShutdown
 	}
-	//logger.Tracef("Send r.request %v", r.request)
+
 	req := codec.Message{
 		Id:       r.id,
 		Target:   r.request.Service(),
@@ -70,7 +70,7 @@ func (r *rpcStream) Send(msg interface{}) error {
 	}
 
 	if err := r.codec.Write(&req, msg); err != nil {
-		logger.Errorf("error writing request: %v", err)
+		//logger.Errorf("error writing request: target:%s err:%v", req.Target, err)
 		r.err = err
 		return err
 	}

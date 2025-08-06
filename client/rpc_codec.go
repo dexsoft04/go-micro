@@ -220,7 +220,7 @@ func (c *rpcCodec) Write(message *codec.Message, body interface{}) error {
 
 	// send the request
 	if err := c.client.Send(&msg); err != nil {
-		logger.Errorf("write err:%v", err)
+		logger.Errorf("%s write err:%v", msg.Header["Micro-Service"], err)
 		return errors.InternalServerError("go.micro.client.transport", err.Error())
 	}
 
