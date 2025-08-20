@@ -39,6 +39,14 @@ func initConfig(ctx *cli.Context, cli *client.Client, srv *server.Server) error 
 		if nil != err {
 			return err
 		}
+
+		// 也为 client 添加 OpenTelemetry wrapper
+		err = (*cli).Init(
+			client.Wrap(opentelemetry.NewClientWrapper()),
+		)
+		if nil != err {
+			return err
+		}
 	}
 
 	reporter, err := prometheus.New()

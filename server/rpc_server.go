@@ -111,8 +111,12 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 			select {
 			case <-s.exit:
 			default:
-				// EOF is expected if the client closes the connection
-				if !errors.Is(gerr, io.EOF) {
+				// EOF and context canceled are expected when the client closes the connection
+				// These are not real errors and should not be logged as such
+				if !errors.Is(gerr, io.EOF) && 
+					!errors.Is(gerr, context.Canceled) &&
+					!strings.Contains(gerr.Error(), "context canceled") &&
+					!strings.Contains(gerr.Error(), "code = Canceled") {
 					logger.Logf(log.ErrorLevel, "error while serving connection: %v", gerr)
 				}
 			}
