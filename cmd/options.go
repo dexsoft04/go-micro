@@ -10,6 +10,7 @@ import (
 	"go-micro.dev/v5/config"
 	"go-micro.dev/v5/debug/profile"
 	"go-micro.dev/v5/debug/trace"
+	"go-micro.dev/v5/events"
 	"go-micro.dev/v5/registry"
 	"go-micro.dev/v5/selector"
 	"go-micro.dev/v5/server"
@@ -21,27 +22,28 @@ type Options struct {
 
 	// Other options for implementations of the interface
 	// can be stored in a context
-	Context  context.Context
-	Auth     *auth.Auth
-	Selector *selector.Selector
-	Profile  *profile.Profile
+	Context      context.Context
+	Auth         *auth.Auth
+	Selector     *selector.Selector
+	DebugProfile *profile.Profile
 
 	Registry *registry.Registry
 
-	Brokers   map[string]func(...broker.Option) broker.Broker
-	Transport *transport.Transport
-	Cache     *cache.Cache
-	Config    *config.Config
-	Client    *client.Client
-	Server    *server.Server
-	Caches    map[string]func(...cache.Option) cache.Cache
-	Tracer    *trace.Tracer
-	Profiles  map[string]func(...profile.Option) profile.Profile
+	Brokers       map[string]func(...broker.Option) broker.Broker
+	Transport     *transport.Transport
+	Cache         *cache.Cache
+	Config        *config.Config
+	Client        *client.Client
+	Server        *server.Server
+	Caches        map[string]func(...cache.Option) cache.Cache
+	Tracer        *trace.Tracer
+	DebugProfiles map[string]func(...profile.Option) profile.Profile
 
 	// We need pointers to things so we can swap them out if needed.
 	Broker     *broker.Broker
 	Auths      map[string]func(...auth.Option) auth.Auth
 	Store      *store.Store
+	Stream     *events.Stream
 	Configs    map[string]func(...config.Option) (config.Config, error)
 	Clients    map[string]func(...client.Option) client.Client
 	Registries map[string]func(...registry.Option) registry.Registry
@@ -49,6 +51,7 @@ type Options struct {
 	Servers    map[string]func(...server.Option) server.Server
 	Transports map[string]func(...transport.Option) transport.Transport
 	Stores     map[string]func(...store.Option) store.Store
+	Streams    map[string]func(...events.Option) events.Stream
 	Tracers    map[string]func(...trace.Option) trace.Tracer
 	Version    string
 
@@ -81,72 +84,91 @@ func Version(v string) Option {
 func Broker(b *broker.Broker) Option {
 	return func(o *Options) {
 		o.Broker = b
+		broker.DefaultBroker = *b
 	}
 }
 
 func Cache(c *cache.Cache) Option {
 	return func(o *Options) {
 		o.Cache = c
+		cache.DefaultCache = *c
 	}
 }
 
 func Config(c *config.Config) Option {
 	return func(o *Options) {
 		o.Config = c
+		config.DefaultConfig = *c
 	}
 }
 
 func Selector(s *selector.Selector) Option {
 	return func(o *Options) {
 		o.Selector = s
+		selector.DefaultSelector = *s
 	}
 }
 
 func Registry(r *registry.Registry) Option {
 	return func(o *Options) {
 		o.Registry = r
+		registry.DefaultRegistry = *r
 	}
 }
 
 func Transport(t *transport.Transport) Option {
 	return func(o *Options) {
 		o.Transport = t
+		transport.DefaultTransport = *t
 	}
 }
 
 func Client(c *client.Client) Option {
 	return func(o *Options) {
 		o.Client = c
+		client.DefaultClient = *c
 	}
 }
 
 func Server(s *server.Server) Option {
 	return func(o *Options) {
 		o.Server = s
+		server.DefaultServer = *s
 	}
 }
 
 func Store(s *store.Store) Option {
 	return func(o *Options) {
 		o.Store = s
+		store.DefaultStore = *s
+	}
+}
+
+func Stream(s *events.Stream) Option {
+	return func(o *Options) {
+		o.Stream = s
+		events.DefaultStream = *s
 	}
 }
 
 func Tracer(t *trace.Tracer) Option {
 	return func(o *Options) {
 		o.Tracer = t
+		trace.DefaultTracer = *t
 	}
 }
 
 func Auth(a *auth.Auth) Option {
 	return func(o *Options) {
 		o.Auth = a
+		auth.DefaultAuth = *a
 	}
 }
 
 func Profile(p *profile.Profile) Option {
 	return func(o *Options) {
-		o.Profile = p
+		o.DebugProfile = p
+		profile.DefaultProfile = *p
 	}
 }
 
@@ -154,6 +176,13 @@ func Profile(p *profile.Profile) Option {
 func NewBroker(name string, b func(...broker.Option) broker.Broker) Option {
 	return func(o *Options) {
 		o.Brokers[name] = b
+	}
+}
+
+// New stream func.
+func NewStream(name string, b func(...events.Option) events.Stream) Option {
+	return func(o *Options) {
+		o.Streams[name] = b
 	}
 }
 
@@ -223,6 +252,6 @@ func NewConfig(name string, t func(...config.Option) (config.Config, error)) Opt
 // New profile func.
 func NewProfile(name string, t func(...profile.Option) profile.Profile) Option {
 	return func(o *Options) {
-		o.Profiles[name] = t
+		o.DebugProfiles[name] = t
 	}
 }

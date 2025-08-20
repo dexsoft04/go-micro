@@ -4,7 +4,10 @@ package grpc
 import (
 	"context"
 	"crypto/tls"
+<<<<<<< HEAD
 	pb "go-micro.dev/v5/transport/grpc/proto"
+=======
+>>>>>>> 95540b7859680eabbc325e01afc844d3d64e1e62
 	"net"
 
 	"go-micro.dev/v5/cmd"
@@ -14,6 +17,11 @@ import (
 	mls "go-micro.dev/v5/util/tls"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+<<<<<<< HEAD
+=======
+
+	pb "go-micro.dev/v5/transport/grpc/proto"
+>>>>>>> 95540b7859680eabbc325e01afc844d3d64e1e62
 )
 
 type grpcTransport struct {
