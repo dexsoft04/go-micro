@@ -110,6 +110,50 @@ curl -XPOST \
 
 Once you've written a service you'll want to run, query and manage it. This is where the [micro](https://github.com/micro/micro) CLI can offer some value. Check it out.
 
+## Backward Compatibility Notice
+
+**⚠️ IMPORTANT: This version includes compatibility code for gradual service migration.**
+
+### gRPC Compatibility
+
+This version maintains backward compatibility with services configured using `MICRO_TRANSPORT=grpc`. The following compatibility features are implemented:
+
+1. **Automatic Protocol Detection**: Services can automatically detect whether to use HTTP or gRPC based on:
+   - Service metadata (`transport` field)
+   - Cached transport information
+   - Automatic fallback on HTTP connection errors
+
+2. **Mixed Environment Support**: You can safely run both old and new services in the same environment:
+   - Old services: Use `MICRO_TRANSPORT=grpc`
+   - New services: Use `MICRO_CLIENT=grpc` and `MICRO_SERVER=grpc` (recommended)
+
+3. **Gradual Migration Path**: Update services one by one without breaking the entire system.
+
+### Migration Timeline
+
+- **Phase 1**: Use compatibility mode to ensure all services work together
+- **Phase 2**: Gradually update services to use upstream gRPC implementations
+- **Phase 3**: Remove compatibility code after all services are updated
+
+### Compatibility Code Locations
+
+The following files contain compatibility code (marked with `===== COMPATIBILITY:`):
+- `client/rpc_client.go`: gRPC connection pooling and automatic protocol detection
+- `transport/grpc/grpc.go`: DefaultGrpcTransport initialization
+
+**TODO**: Remove all compatibility code after complete migration to maintain clean codebase.
+
+## 相关文档
+
+### 性能优化指南
+- [高并发优化计划](docs/high-concurrency-optimization-plan.md) - 详细的性能优化实施计划，包括连接池优化、内存管理、服务发现缓存等改进方案
+
+### 版本兼容性测试
+- [快速开始](tests/integration/QUICK_START.md) - 5分钟快速验证新旧版本兼容性
+- [完整测试指南](tests/integration/TESTING_GUIDE.md) - 详细的兼容性测试文档，包含环境准备、测试执行、结果分析等完整流程
+- [集成测试套件](tests/integration/README.md) - 自动化测试脚本说明，涵盖 RPC、事件发布订阅、性能和错误恢复等测试场景
+- [Postman API 测试](tests/integration/postman/README.md) - 使用 Postman 进行 API 兼容性测试的配置和使用指南
+
 ## Experimental
 
 There's a new `genai` package for generative AI capabilities. This is an evolving feature which may change over time as we think about how Go Micro plays the right role in the developers workflow. We'll also be looking at agentic features and a2a/mcp protocol integration.

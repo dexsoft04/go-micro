@@ -3,7 +3,11 @@ package nats
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
+	"io/ioutil"
+	"os"
 	"strings"
 	"sync"
 
@@ -203,17 +207,52 @@ func (n *natsBroker) Subscribe(topic string, handler broker.Handler, opts ...bro
 		var m broker.Message
 		pub := &publication{t: msg.Subject}
 		eh := n.opts.ErrorHandler
+
+		// 解码从 NATS 接收到的消息
+		// 发布端使用 Codec.Marshal 编码了整个 broker.Message，这里需要对应解码
 		err := n.opts.Codec.Unmarshal(msg.Data, &m)
 		pub.err = err
 		pub.m = &m
+
 		if err != nil {
+			// 解码失败时，创建一个包含原始数据的消息
 			m.Body = msg.Data
+			m.Header = make(map[string]string)
+			m.Header["Micro-Topic"] = msg.Subject
+
+			// 从 NATS 消息头中提取信息（如果有）
+			if msg.Header != nil {
+				for k, v := range msg.Header {
+					if len(v) > 0 {
+						m.Header[k] = v[0]
+					}
+				}
+			}
+
 			n.opts.Logger.Log(logger.ErrorLevel, err)
 			if eh != nil {
 				eh(pub)
 			}
 			return
 		}
+
+		// 确保消息头部存在
+		if m.Header == nil {
+			m.Header = make(map[string]string)
+		}
+
+		// 设置主题信息
+		m.Header["Micro-Topic"] = msg.Subject
+		
+		// 从 NATS 消息头中提取信息（如果有）
+		if msg.Header != nil {
+			for k, v := range msg.Header {
+				if len(v) > 0 {
+					m.Header[k] = v[0]
+				}
+			}
+		}
+
 		if err := handler(pub); err != nil {
 			pub.err = err
 			n.opts.Logger.Log(logger.ErrorLevel, err)
@@ -304,6 +343,26 @@ func NewNatsBroker(opts ...broker.Option) broker.Broker {
 		Context:  context.Background(),
 		Registry: registry.DefaultRegistry,
 		Logger:   logger.DefaultLogger,
+	}
+
+	// Read TLS configuration from environment variables
+	if len(os.Getenv("MICRO_BROKER_TLS_CA")) > 0 || len(os.Getenv("MICRO_BROKER_TLS_KEY")) > 0 || len(os.Getenv("MICRO_BROKER_TLS_CERT")) > 0 {
+		// Parse broker TLS certs
+		cert, err := tls.LoadX509KeyPair(os.Getenv("MICRO_BROKER_TLS_CERT"), os.Getenv("MICRO_BROKER_TLS_KEY"))
+		if err != nil {
+			logger.Fatalf("Error loading broker TLS cert: %v", err)
+		}
+		cfg := &tls.Config{Certificates: []tls.Certificate{cert}}
+		if len(os.Getenv("MICRO_BROKER_TLS_CA")) > 0 {
+			crt, err := ioutil.ReadFile(os.Getenv("MICRO_BROKER_TLS_CA"))
+			if err != nil {
+				logger.Fatalf("Error loading broker TLS certificate authority: %v", err)
+			}
+			ca := x509.NewCertPool()
+			ca.AppendCertsFromPEM(crt)
+			cfg.RootCAs = ca
+		}
+		opts = append(opts, broker.TLSConfig(cfg))
 	}
 
 	n := &natsBroker{

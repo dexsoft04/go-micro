@@ -1,19 +1,12 @@
 package grpc
 
 import (
-<<<<<<< HEAD
-	pb "go-micro.dev/v5/transport/grpc/proto"
-=======
->>>>>>> 95540b7859680eabbc325e01afc844d3d64e1e62
 	"runtime/debug"
 
 	"go-micro.dev/v5/errors"
 	"go-micro.dev/v5/logger"
 	"go-micro.dev/v5/transport"
-<<<<<<< HEAD
-=======
 	pb "go-micro.dev/v5/transport/grpc/proto"
->>>>>>> 95540b7859680eabbc325e01afc844d3d64e1e62
 	"google.golang.org/grpc/peer"
 )
 

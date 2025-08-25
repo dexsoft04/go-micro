@@ -4,10 +4,6 @@ package grpc
 import (
 	"context"
 	"crypto/tls"
-<<<<<<< HEAD
-	pb "go-micro.dev/v5/transport/grpc/proto"
-=======
->>>>>>> 95540b7859680eabbc325e01afc844d3d64e1e62
 	"net"
 
 	"go-micro.dev/v5/cmd"
@@ -17,11 +13,8 @@ import (
 	mls "go-micro.dev/v5/util/tls"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-<<<<<<< HEAD
-=======
 
 	pb "go-micro.dev/v5/transport/grpc/proto"
->>>>>>> 95540b7859680eabbc325e01afc844d3d64e1e62
 )
 
 type grpcTransport struct {
@@ -36,6 +29,11 @@ type grpcTransportListener struct {
 
 func init() {
 	cmd.DefaultTransports["grpc"] = NewTransport
+	
+	// ===== COMPATIBILITY: dexsoft gRPC transport support =====
+	// TODO: Remove this compatibility code after all services are updated
+	// Initialize DefaultGrpcTransport for backward compatibility with MICRO_TRANSPORT=grpc
+	transport.DefaultGrpcTransport = NewTransport()
 }
 
 func getTLSConfig(addr string) (*tls.Config, error) {

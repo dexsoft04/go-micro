@@ -4,12 +4,16 @@ package cmd
 import (
 	"fmt"
 	"math/rand"
-	"sort"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/urfave/cli/v2"
+	"go-micro.dev/v5/auth"
+	"go-micro.dev/v5/broker"
+	nbroker "go-micro.dev/v5/broker/nats"
+	rabbit "go-micro.dev/v5/broker/rabbitmq"
 	"go-micro.dev/v5/cache"
 	"go-micro.dev/v5/cache/redis"
 	"go-micro.dev/v5/client"
@@ -19,15 +23,11 @@ import (
 	"go-micro.dev/v5/debug/profile/pprof"
 	"go-micro.dev/v5/debug/trace"
 	"go-micro.dev/v5/events"
-	"go-micro.dev/v5/logger"
-	mprofile "go-micro.dev/v5/profile"
-	"go-micro.dev/v5/auth"
-	"go-micro.dev/v5/broker"
-	nbroker "go-micro.dev/v5/broker/nats"
-	rabbit "go-micro.dev/v5/broker/rabbitmq"
 	"go-micro.dev/v5/genai"
 	"go-micro.dev/v5/genai/gemini"
 	"go-micro.dev/v5/genai/openai"
+	"go-micro.dev/v5/logger"
+	mprofile "go-micro.dev/v5/profile"
 	"go-micro.dev/v5/registry"
 	"go-micro.dev/v5/registry/consul"
 	"go-micro.dev/v5/registry/etcd"
@@ -108,7 +108,7 @@ var (
 		},
 		&cli.StringFlag{
 			Name:    "server_name",
-			EnvVars: []string{"MICRO_SERVER_NAME"},
+			EnvVars: []string{"MICRO_SERVER_NAME", "MICRO_SERVICE_NAME"},
 			Usage:   "Name of the server. go.micro.srv.example",
 		},
 		&cli.StringFlag{
@@ -148,6 +148,21 @@ var (
 			Usage:   "Comma-separated list of broker addresses",
 		},
 		&cli.StringFlag{
+			Name:    "broker_tls_ca",
+			EnvVars: []string{"MICRO_BROKER_TLS_CA"},
+			Usage:   "Comma-separated list of broker tls ca",
+		},
+		&cli.StringFlag{
+			Name:    "broker_tls_cert",
+			EnvVars: []string{"MICRO_BROKER_TLS_CERT"},
+			Usage:   "Comma-separated list of broker tls cert",
+		},
+		&cli.StringFlag{
+			Name:    "broker_tls_key",
+			EnvVars: []string{"MICRO_BROKER_TLS_KEY"},
+			Usage:   "Comma-separated list of broker tls key",
+		},
+		&cli.StringFlag{
 			Name:    "profile",
 			Usage:   "Plugin profile to use. (local, nats, etc)",
 			EnvVars: []string{"MICRO_PROFILE"},
@@ -166,6 +181,21 @@ var (
 			Name:    "registry_address",
 			EnvVars: []string{"MICRO_REGISTRY_ADDRESS"},
 			Usage:   "Comma-separated list of registry addresses",
+		},
+		&cli.StringFlag{
+			Name:    "registry_tls_ca",
+			EnvVars: []string{"MICRO_REGISTRY_TLS_CA"},
+			Usage:   "Comma-separated list of registry tls ca",
+		},
+		&cli.StringFlag{
+			Name:    "registry_tls_cert",
+			EnvVars: []string{"MICRO_REGISTRY_TLS_CERT"},
+			Usage:   "Comma-separated list of registry tls cert",
+		},
+		&cli.StringFlag{
+			Name:    "registry_tls_key",
+			EnvVars: []string{"MICRO_REGISTRY_TLS_KEY"},
+			Usage:   "Comma-separated list of registry tls key",
 		},
 		&cli.StringFlag{
 			Name:    "selector",
@@ -540,11 +570,13 @@ func (c *cmd) Before(ctx *cli.Context) error {
 	}
 
 	// Set the broker
+	// ===== COMPATIBILITY: dexsoft broker handling =====
 	if name := ctx.String("broker"); len(name) > 0 && (*c.opts.Broker).String() != name {
 		b, ok := c.opts.Brokers[name]
 		if !ok {
 			return fmt.Errorf("Broker %s not found", name)
 		}
+
 		sopts, clopts := c.setBroker(b())
 		serverOpts = append(serverOpts, sopts...)
 		clientOpts = append(clientOpts, clopts...)

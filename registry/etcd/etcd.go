@@ -4,8 +4,10 @@ package etcd
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"net"
 	"os"
 	"path"
@@ -49,6 +51,31 @@ func NewEtcdRegistry(opts ...registry.Option) registry.Registry {
 	if len(address) > 0 {
 		opts = append(opts, registry.Addrs(address))
 	}
+
+	// Read TLS configuration from environment variables
+	if len(os.Getenv("MICRO_REGISTRY_TLS_CERT")) > 0 || len(os.Getenv("MICRO_REGISTRY_TLS_KEY")) > 0 {
+		cert, err := tls.LoadX509KeyPair(os.Getenv("MICRO_REGISTRY_TLS_CERT"), os.Getenv("MICRO_REGISTRY_TLS_KEY"))
+		if err != nil {
+			logger.Fatalf("Error loading registry tls cert: %v", err)
+		}
+
+		caCertPool := x509.NewCertPool()
+		if len(os.Getenv("MICRO_REGISTRY_TLS_CA")) > 0 {
+			crt, err := ioutil.ReadFile(os.Getenv("MICRO_REGISTRY_TLS_CA"))
+			if err != nil {
+				logger.Fatalf("Error loading registry tls certificate authority: %v", err)
+			}
+			caCertPool.AppendCertsFromPEM(crt)
+		}
+
+		tlsConf := &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			RootCAs:      caCertPool,
+		}
+
+		opts = append(opts, registry.TLSConfig(tlsConf))
+	}
+
 	configure(e, opts...)
 	return e
 }

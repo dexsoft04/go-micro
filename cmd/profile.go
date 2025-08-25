@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"context"
-	"github.com/micro/plugins/v5/wrapper/trace/opentelemetry"
+	"go-micro.dev/v5/wrapper/trace/opentelemetry"
 	"github.com/urfave/cli/v2"
 	"github.com/zigo2048/mcbeam-common-lib/common/metrics"
 	metricsWrapper "github.com/zigo2048/mcbeam-common-lib/common/metrics/wrapper"
@@ -98,7 +98,7 @@ func tracerProvider(url string) (*trace.TracerProvider, error) {
 	ctx := context.Background()
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
-			semconv.ServiceName(os.Getenv("MICRO_SERVICE_NAME")),
+			semconv.ServiceName(os.Getenv("MICRO_SERVER_NAME")),
 			semconv.ServiceVersion(os.Getenv("MICRO_SERVER_VERSION")),
 		),
 	)

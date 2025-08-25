@@ -52,17 +52,23 @@ func newRPCClient(opt ...Option) Client {
 		pool.Transport(opts.Transport),
 		pool.CloseTimeout(opts.PoolCloseTimeout),
 	)
-	//gp := pool.NewPool(
-	//	pool.Size(opts.PoolSize),
-	//	pool.TTL(opts.PoolTTL),
-	//	pool.Transport(opts.GrpcTransport),
-	//	pool.CloseTimeout(opts.PoolCloseTimeout),
-	//)
+	// ===== COMPATIBILITY: dexsoft gRPC pool support =====
+	// TODO: Remove this compatibility code after all services are updated
+	// This grpcPool provides gRPC connection pooling for backward compatibility
+	// with services using MICRO_TRANSPORT=grpc configuration
+	gp := pool.NewPool(
+		pool.Size(opts.PoolSize),
+		pool.TTL(opts.PoolTTL),
+		pool.Transport(opts.GrpcTransport),
+		pool.CloseTimeout(opts.PoolCloseTimeout),
+	)
 	rc := &rpcClient{
 		opts: opts,
 		pool: p,
-		//grpcPool: gp,
-		seq: 0,
+		// ===== COMPATIBILITY: dexsoft gRPC pool support =====
+		// TODO: Remove this compatibility code after all services are updated
+		grpcPool: gp,
+		seq:      0,
 	}
 	rc.once.Store(false)
 
@@ -251,6 +257,10 @@ func (r *rpcClient) call(
 	return nil
 }
 
+// ===== COMPATIBILITY: dexsoft gRPC call implementation =====
+// TODO: Remove this compatibility code after all services are updated
+// grpcCall provides gRPC communication for backward compatibility with
+// services using MICRO_TRANSPORT=grpc configuration
 func (r *rpcClient) grpcCall(
 	ctx context.Context,
 	node *registry.Node,
@@ -779,28 +789,44 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 		resp interface{},
 		opts CallOptions,
 	) error {
+		// ===== COMPATIBILITY: dexsoft auto protocol detection =====
+		// TODO: Remove this compatibility code after all services are updated
+		// This provides automatic protocol detection for mixed HTTP/gRPC services
+		// Priority: 1) node metadata 2) transport cache 3) auto-detection on error
+
 		//for k, v := range node.Metadata {
 		//	log.Debugf("Call %s %s %s", req.Service(), k, v)
 		//}
+
+		// Check service metadata for transport type
 		ts, ok := node.Metadata["transport"]
 		if !ok {
+			// Check cached transport type for this node
 			if v, ok := r.transportCache.Load(node.Id); ok {
 				ts = v.(string)
 			}
 		}
+		// If transport is explicitly gRPC, use grpcCall
 		if ts == "grpc" {
 			return r.grpcCall(ctx, node, req, resp, opts)
 		}
+		// Try HTTP call first
 		err = r.call(ctx, node, req, resp, opts)
+
+		// ===== COMPATIBILITY: Auto-fallback to gRPC on HTTP failure =====
+		// TODO: Remove this compatibility code after all services are updated
+		// If HTTP call fails with "malformed HTTP" error, automatically try gRPC
 		if ts == "" && err != nil {
 			if ve, ok := err.(*merrors.Error); ok && nil != ve && ve.Code == 500 && strings.Contains(ve.Detail, "malformed HTTP") {
 				for k, v := range node.Metadata {
 					log.Debugf("=== Call node.Metadata %s %s %s", req.Service(), k, v)
 				}
+				// Fallback to gRPC call
 				err = r.grpcCall(ctx, node, req, resp, opts)
 				if err != nil {
 					return err
 				}
+				// Cache the detected transport type for future calls
 				ts = "grpc"
 				log.Infof("detect transport %s %s", req.Service(), node.Id)
 				r.transportCache.Store(node.Id, ts)
