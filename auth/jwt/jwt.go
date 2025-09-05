@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	jwtToken "go-micro.dev/v5/auth/jwt/token"
+	jwtToken "github.com/micro/plugins/v5/auth/jwt/token"
 	"go-micro.dev/v5/auth"
 	"go-micro.dev/v5/cmd"
 )

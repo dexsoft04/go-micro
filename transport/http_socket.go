@@ -53,8 +53,6 @@ func (h *httpTransportSocket) Recv(msg *Message) error {
 		msg.Header = make(map[string]string, len(h.r.Header))
 	}
 
-	//logger.Tracef("httpTransportSocket Recv %s ct:%s req:%v", msg.Header["Micro-Method"], msg.Header["Content-Type"], h.r)
-
 	if h.r.ProtoMajor == 1 {
 		return h.recvHTTP1(msg)
 	}

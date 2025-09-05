@@ -3,10 +3,13 @@ package opentelemetry
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go-micro.dev/v5/client"
+	log "go-micro.dev/v5/logger"
 	"go-micro.dev/v5/registry"
 	"go-micro.dev/v5/server"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -22,18 +25,46 @@ func NewCallWrapper(opts ...Option) client.CallWrapper {
 			if options.CallFilter != nil && options.CallFilter(ctx, req) {
 				return cf(ctx, node, req, rsp, opts)
 			}
+			
+			// Record start time for detailed timing
+			startTime := time.Now()
+			
 			name := fmt.Sprintf("%s.%s", req.Service(), req.Endpoint())
 			spanOpts := []trace.SpanStartOption{
 				trace.WithSpanKind(trace.SpanKindClient),
 			}
 			ctx, span := StartSpanFromContext(ctx, options.TraceProvider, name, spanOpts...)
-			defer span.End()
-			if err := cf(ctx, node, req, rsp, opts); err != nil {
+			
+			defer func() {
+				// Calculate total duration
+				duration := time.Since(startTime)
+				
+				// Output detailed timing log
+				log.Logf(log.InfoLevel, 
+					"RPC_TIMING: service=%s endpoint=%s node=%s duration_ms=%d trace_id=%s span_id=%s",
+					req.Service(), 
+					req.Endpoint(),
+					node.Address,
+					duration.Milliseconds(),
+					span.SpanContext().TraceID().String(),
+					span.SpanContext().SpanID().String(),
+				)
+				
+				// Set span attributes
+				span.SetAttributes(
+					attribute.Int64("rpc.duration_ms", duration.Milliseconds()),
+					attribute.String("rpc.node_address", node.Address),
+				)
+				
+				span.End()
+			}()
+			
+			err := cf(ctx, node, req, rsp, opts)
+			if err != nil {
 				span.SetStatus(codes.Error, err.Error())
 				span.RecordError(err)
-				return err
 			}
-			return nil
+			return err
 		}
 	}
 }
@@ -49,18 +80,44 @@ func NewHandlerWrapper(opts ...Option) server.HandlerWrapper {
 			if options.HandlerFilter != nil && options.HandlerFilter(ctx, req) {
 				return h(ctx, req, rsp)
 			}
+			
+			// Record start time for detailed timing
+			startTime := time.Now()
+			
 			name := fmt.Sprintf("%s.%s", req.Service(), req.Endpoint())
 			spanOpts := []trace.SpanStartOption{
 				trace.WithSpanKind(trace.SpanKindServer),
 			}
 			ctx, span := StartSpanFromContext(ctx, options.TraceProvider, name, spanOpts...)
-			defer span.End()
-			if err := h(ctx, req, rsp); err != nil {
+			
+			defer func() {
+				// Calculate total duration
+				duration := time.Since(startTime)
+				
+				// Output server timing log
+				log.Logf(log.InfoLevel,
+					"RPC_TIMING_SERVER: service=%s endpoint=%s duration_ms=%d trace_id=%s span_id=%s",
+					req.Service(),
+					req.Endpoint(), 
+					duration.Milliseconds(),
+					span.SpanContext().TraceID().String(),
+					span.SpanContext().SpanID().String(),
+				)
+				
+				// Set span attributes
+				span.SetAttributes(
+					attribute.Int64("rpc.server.duration_ms", duration.Milliseconds()),
+				)
+				
+				span.End()
+			}()
+			
+			err := h(ctx, req, rsp)
+			if err != nil {
 				span.SetStatus(codes.Error, err.Error())
 				span.RecordError(err)
-				return err
 			}
-			return nil
+			return err
 		}
 	}
 }
@@ -124,18 +181,44 @@ func (w *clientWrapper) Call(ctx context.Context, req client.Request, rsp interf
 	if w.callFilter != nil && w.callFilter(ctx, req) {
 		return w.Client.Call(ctx, req, rsp, opts...)
 	}
+	
+	// Record start time for detailed timing
+	startTime := time.Now()
+	
 	name := fmt.Sprintf("%s.%s", req.Service(), req.Endpoint())
 	spanOpts := []trace.SpanStartOption{
 		trace.WithSpanKind(trace.SpanKindClient),
 	}
 	ctx, span := StartSpanFromContext(ctx, w.tp, name, spanOpts...)
-	defer span.End()
-	if err := w.Client.Call(ctx, req, rsp, opts...); err != nil {
+	
+	defer func() {
+		// Calculate total duration
+		duration := time.Since(startTime)
+		
+		// Output client wrapper timing log
+		log.Logf(log.InfoLevel, 
+			"RPC_TIMING_CLIENT: service=%s endpoint=%s duration_ms=%d trace_id=%s span_id=%s",
+			req.Service(), 
+			req.Endpoint(),
+			duration.Milliseconds(),
+			span.SpanContext().TraceID().String(),
+			span.SpanContext().SpanID().String(),
+		)
+		
+		// Set span attributes
+		span.SetAttributes(
+			attribute.Int64("rpc.client.duration_ms", duration.Milliseconds()),
+		)
+		
+		span.End()
+	}()
+	
+	err := w.Client.Call(ctx, req, rsp, opts...)
+	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		span.RecordError(err)
-		return err
 	}
-	return nil
+	return err
 }
 
 func (w *clientWrapper) Stream(ctx context.Context, req client.Request, opts ...client.CallOption) (client.Stream, error) {

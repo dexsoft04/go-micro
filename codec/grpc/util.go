@@ -3,9 +3,7 @@ package grpc
 import (
 	"encoding/binary"
 	"fmt"
-	"go-micro.dev/v5/logger"
 	"io"
-	"runtime/debug"
 )
 
 var (
@@ -31,12 +29,12 @@ func decode(r io.Reader) (uint8, []byte, error) {
 	if length == 0 {
 		return cf, nil, nil
 	}
+
 	//
 	if int64(length) > int64(maxInt) {
-		return cf, nil, fmt.Errorf("grpc: received message larger than max length allowed on current machine (%d vs. %d) %s", length, maxInt, string(debug.Stack()))
+		return cf, nil, fmt.Errorf("grpc: received message larger than max length allowed on current machine (%d vs. %d)", length, maxInt)
 	}
 	if int(length) > MaxMessageSize {
-		logger.Errorf("=== Decode: length: %d %T %s", length, r, string(debug.Stack()))
 		return cf, nil, fmt.Errorf("grpc: received message larger than max (%d vs. %d)", length, MaxMessageSize)
 	}
 
@@ -46,7 +44,6 @@ func decode(r io.Reader) (uint8, []byte, error) {
 		if err == io.EOF {
 			err = io.ErrUnexpectedEOF
 		}
-		logger.Errorf("Failed to read request: %v", err)
 		return cf, nil, err
 	}
 
@@ -58,20 +55,16 @@ func encode(cf uint8, buf []byte, w io.Writer) error {
 
 	// set compression
 	header[0] = byte(cf)
-	//logger.Tracef("=== Encode: length: %v %s", uint32(len(buf)), string(debug.Stack()))
+
 	// write length as header
 	binary.BigEndian.PutUint32(header[1:], uint32(len(buf)))
 
 	// read the header
 	if _, err := w.Write(header); err != nil {
-		logger.Errorf("Failed to encode request: %v", err)
 		return err
 	}
 
 	// write the buffer
 	_, err := w.Write(buf)
-	if nil != err {
-		logger.Errorf("Failed to encode request: %v %s", err, string(debug.Stack()))
-	}
 	return err
 }

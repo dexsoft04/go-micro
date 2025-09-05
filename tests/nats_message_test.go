@@ -2,13 +2,11 @@ package tests
 
 import (
 	"bytes"
-	"context"
 	"testing"
 	"time"
 
 	"go-micro.dev/v5/broker"
 	natsBroker "go-micro.dev/v5/broker/nats"
-	"go-micro.dev/v5/codec/proto"
 )
 
 // TestNATSMessagePassthrough 测试 NATS broker 是否正确透传消息

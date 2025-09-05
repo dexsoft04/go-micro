@@ -3,8 +3,9 @@ package jsonrpc
 import (
 	"encoding/json"
 	"fmt"
-	"go-micro.dev/v5/codec"
 	"io"
+
+	"go-micro.dev/v5/codec"
 )
 
 type serverCodec struct {
@@ -48,8 +49,6 @@ func (r *serverRequest) reset() {
 }
 
 func (c *serverCodec) ReadHeader(m *codec.Message) error {
-	//logger.Tracef("jsonrpc server ReadHeader m.Type:%v %s", m.Type, string(debug.Stack()))
-
 	c.req.reset()
 	if err := c.dec.Decode(&c.req); err != nil {
 		return err
@@ -64,7 +63,6 @@ func (c *serverCodec) ReadBody(x interface{}) error {
 	if x == nil {
 		return nil
 	}
-	//logger.Tracef("jsonrpc server ReadBody x:%T %s", x, string(debug.Stack()))
 	var params [1]interface{}
 	params[0] = x
 	return json.Unmarshal(*c.req.Params, &params)
@@ -73,7 +71,6 @@ func (c *serverCodec) ReadBody(x interface{}) error {
 var null = json.RawMessage([]byte("null"))
 
 func (c *serverCodec) Write(m *codec.Message, x interface{}) error {
-	//logger.Tracef("jsonrpc server Write x:%T %s", x, string(debug.Stack()))
 	var resp serverResponse
 	resp.ID = m.Id
 	resp.Result = x

@@ -3,6 +3,7 @@ package json
 import (
 	"bytes"
 	"encoding/json"
+
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/oxtoacart/bpool"
@@ -17,8 +18,6 @@ type Marshaler struct{}
 
 func (j Marshaler) Marshal(v interface{}) ([]byte, error) {
 	if pb, ok := v.(proto.Message); ok {
-		//logger.Tracef("jsonpbMarshaler Marshal %T %s", v, string(debug.Stack()))
-
 		buf := bufferPool.Get()
 		defer bufferPool.Put(buf)
 		if err := jsonpbMarshaler.Marshal(buf, pb); err != nil {
@@ -26,16 +25,13 @@ func (j Marshaler) Marshal(v interface{}) ([]byte, error) {
 		}
 		return buf.Bytes(), nil
 	}
-	//logger.Tracef("json Marshal %T %s", v, string(debug.Stack()))
 	return json.Marshal(v)
 }
 
 func (j Marshaler) Unmarshal(d []byte, v interface{}) error {
 	if pb, ok := v.(proto.Message); ok {
-		//logger.Tracef("jsonpb Unmarshal %T %s", v, string(debug.Stack()))
 		return jsonpb.Unmarshal(bytes.NewReader(d), pb)
 	}
-	//logger.Tracef("json Unmarshal %T %s", v, string(debug.Stack()))
 	return json.Unmarshal(d, v)
 }
 

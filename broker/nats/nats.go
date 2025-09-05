@@ -208,19 +208,19 @@ func (n *natsBroker) Subscribe(topic string, handler broker.Handler, opts ...bro
 		pub := &publication{t: msg.Subject}
 		eh := n.opts.ErrorHandler
 
-		// 解码从 NATS 接收到的消息
-		// 发布端使用 Codec.Marshal 编码了整个 broker.Message，这里需要对应解码
+		// decode the message received from NATS
+		// the publisher uses Codec.Marshal to encode the entire broker.Message, so we need to decode it here
 		err := n.opts.Codec.Unmarshal(msg.Data, &m)
 		pub.err = err
 		pub.m = &m
 
 		if err != nil {
-			// 解码失败时，创建一个包含原始数据的消息
+			// create a message containing raw data when decoding fails
 			m.Body = msg.Data
 			m.Header = make(map[string]string)
 			m.Header["Micro-Topic"] = msg.Subject
 
-			// 从 NATS 消息头中提取信息（如果有）
+			// extract information from NATS message headers (if any)
 			if msg.Header != nil {
 				for k, v := range msg.Header {
 					if len(v) > 0 {
@@ -236,15 +236,15 @@ func (n *natsBroker) Subscribe(topic string, handler broker.Handler, opts ...bro
 			return
 		}
 
-		// 确保消息头部存在
+		// ensure message header exists
 		if m.Header == nil {
 			m.Header = make(map[string]string)
 		}
 
-		// 设置主题信息
+		// set topic information
 		m.Header["Micro-Topic"] = msg.Subject
 		
-		// 从 NATS 消息头中提取信息（如果有）
+		// extract information from NATS message headers (if any)
 		if msg.Header != nil {
 			for k, v := range msg.Header {
 				if len(v) > 0 {

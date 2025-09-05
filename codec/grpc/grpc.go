@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go-micro.dev/v5/logger"
 	"io"
 	"runtime/debug"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"go-micro.dev/v5/codec"
+	"go-micro.dev/v5/logger"
 	"go-micro.dev/v5/transport/headers"
 )
 
@@ -56,7 +56,6 @@ func (c *Codec) ReadBody(b interface{}) error {
 
 	_, buf, err := decode(c.Conn)
 	if err != nil {
-		//logger.Errorf("grpc Failed to decode request: %v c.Conn:%T %s", err, c.Conn, string(debug.Stack()))
 		return err
 	}
 
@@ -64,9 +63,9 @@ func (c *Codec) ReadBody(b interface{}) error {
 	case "application/grpc+json":
 		return json.Unmarshal(buf, b)
 	case "application/grpc+proto", "application/grpc":
-		//logger.Tracef("grpc ReadHeader proto ContentType:%v b:%T %s", c.ContentType, b, string(debug.Stack()))
 		return proto.Unmarshal(buf, b.(proto.Message))
 	}
+
 	return errors.New("Unsupported Content-Type")
 }
 

@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"errors"
-	"go-micro.dev/v5/logger"
 	"io"
 	"sync"
 
@@ -70,7 +69,6 @@ func (r *rpcStream) Send(msg interface{}) error {
 	}
 
 	if err := r.codec.Write(&req, msg); err != nil {
-		//logger.Errorf("error writing request: target:%s err:%v", req.Target, err)
 		r.err = err
 		return err
 	}
@@ -106,8 +104,6 @@ func (r *rpcStream) Recv(msg interface{}) error {
 
 		r.Unlock()
 
-		logger.Errorf("rpc stream error: %v codec:%s", err, r.codec.String())
-
 		return err
 	}
 
@@ -125,7 +121,6 @@ func (r *rpcStream) Recv(msg interface{}) error {
 		err = r.codec.ReadBody(nil)
 		r.Lock()
 		if err != nil {
-			logger.Errorf("rpcStream Recv0 err:%v %T r.codec:%T", err, msg, r.codec)
 			r.err = err
 		}
 	default:
@@ -133,7 +128,6 @@ func (r *rpcStream) Recv(msg interface{}) error {
 		err = r.codec.ReadBody(msg)
 		r.Lock()
 		if err != nil {
-			logger.Errorf("rpcStream Recv err:%v %T r.codec:%T", err, msg, r.codec)
 			r.err = err
 		}
 	}

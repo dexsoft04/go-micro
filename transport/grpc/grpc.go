@@ -29,11 +29,6 @@ type grpcTransportListener struct {
 
 func init() {
 	cmd.DefaultTransports["grpc"] = NewTransport
-	
-	// ===== COMPATIBILITY: dexsoft gRPC transport support =====
-	// TODO: Remove this compatibility code after all services are updated
-	// Initialize DefaultGrpcTransport for backward compatibility with MICRO_TRANSPORT=grpc
-	transport.DefaultGrpcTransport = NewTransport()
 }
 
 func getTLSConfig(addr string) (*tls.Config, error) {

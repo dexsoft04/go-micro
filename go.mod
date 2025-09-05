@@ -2,7 +2,6 @@ module go-micro.dev/v5
 
 go 1.23.10
 
-
 require (
 	github.com/bitly/go-simplejson v0.5.1
 	github.com/cornelk/hashmap v1.0.8
@@ -18,6 +17,7 @@ require (
 	github.com/jackc/pgx/v4 v4.18.3
 	github.com/kr/pretty v0.3.1
 	github.com/lib/pq v1.10.9
+	github.com/micro/plugins/v5/auth/jwt v0.0.0-20250502062951-be3f35ce6464
 	github.com/miekg/dns v1.1.63
 	github.com/nats-io/nats-server/v2 v2.11.8
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c
@@ -35,6 +35,7 @@ require (
 	golang.org/x/crypto v0.41.0
 	golang.org/x/net v0.42.0
 	golang.org/x/sync v0.16.0
+	google.golang.org/grpc v1.71.0
 	google.golang.org/protobuf v1.36.6
 )
 

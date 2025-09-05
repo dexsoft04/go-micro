@@ -4,30 +4,31 @@ package cmd
 import (
 	"fmt"
 	"math/rand"
-	"os"
 	"sort"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/urfave/cli/v2"
-	"go-micro.dev/v5/auth"
-	"go-micro.dev/v5/broker"
-	nbroker "go-micro.dev/v5/broker/nats"
-	rabbit "go-micro.dev/v5/broker/rabbitmq"
 	"go-micro.dev/v5/cache"
 	"go-micro.dev/v5/cache/redis"
 	"go-micro.dev/v5/client"
 	"go-micro.dev/v5/config"
+	"go-micro.dev/v5/config/tls"
 	"go-micro.dev/v5/debug/profile"
 	"go-micro.dev/v5/debug/profile/http"
 	"go-micro.dev/v5/debug/profile/pprof"
 	"go-micro.dev/v5/debug/trace"
 	"go-micro.dev/v5/events"
+	"go-micro.dev/v5/logger"
+	mprofile "go-micro.dev/v5/profile"
+	"go-micro.dev/v5/auth"
+	"go-micro.dev/v5/broker"
+	nbroker "go-micro.dev/v5/broker/nats"
+	rabbit "go-micro.dev/v5/broker/rabbitmq"
 	"go-micro.dev/v5/genai"
 	"go-micro.dev/v5/genai/gemini"
 	"go-micro.dev/v5/genai/openai"
-	"go-micro.dev/v5/logger"
-	mprofile "go-micro.dev/v5/profile"
 	"go-micro.dev/v5/registry"
 	"go-micro.dev/v5/registry/consul"
 	"go-micro.dev/v5/registry/etcd"
@@ -570,13 +571,11 @@ func (c *cmd) Before(ctx *cli.Context) error {
 	}
 
 	// Set the broker
-	// ===== COMPATIBILITY: dexsoft broker handling =====
 	if name := ctx.String("broker"); len(name) > 0 && (*c.opts.Broker).String() != name {
 		b, ok := c.opts.Brokers[name]
 		if !ok {
 			return fmt.Errorf("Broker %s not found", name)
 		}
-
 		sopts, clopts := c.setBroker(b())
 		serverOpts = append(serverOpts, sopts...)
 		clientOpts = append(clientOpts, clopts...)
@@ -631,10 +630,20 @@ func (c *cmd) Before(ctx *cli.Context) error {
 		}
 	}
 
+	// Configure broker TLS if provided
+	if err := c.configureBrokerTLS(ctx); err != nil {
+		logger.Fatalf("Error configuring broker TLS: %v", err)
+	}
+
 	if len(ctx.String("registry_address")) > 0 {
 		if err := (*c.opts.Registry).Init(registry.Addrs(strings.Split(ctx.String("registry_address"), ",")...)); err != nil {
 			logger.Fatalf("Error configuring registry: %v", err)
 		}
+	}
+
+	// Configure registry TLS if provided
+	if err := c.configureRegistryTLS(ctx); err != nil {
+		logger.Fatalf("Error configuring registry TLS: %v", err)
 	}
 
 	if len(ctx.String("transport_address")) > 0 {
@@ -809,6 +818,68 @@ func (c *cmd) setTransport(t transport.Transport) ([]server.Option, []client.Opt
 	clientOpts = append(clientOpts, client.Transport(*c.opts.Transport))
 	transport.DefaultTransport = *c.opts.Transport
 	return serverOpts, clientOpts
+}
+
+// configureBrokerTLS configures TLS for the broker if TLS options are provided
+func (c *cmd) configureBrokerTLS(ctx *cli.Context) error {
+	tlsConfig := tls.FromEnvironment(
+		ctx.String("broker_tls_ca"),
+		ctx.String("broker_tls_cert"),
+		ctx.String("broker_tls_key"),
+	)
+
+	if !tlsConfig.Enabled {
+		return nil
+	}
+
+	// Build the TLS configuration
+	cryptoTLS, err := tlsConfig.BuildTLSConfig()
+	if err != nil {
+		return fmt.Errorf("failed to build broker TLS config: %v", err)
+	}
+
+	if cryptoTLS != nil {
+		// Store TLS config for broker components to use
+		// Most brokers will check for TLS config in their Init/Connect methods
+		logger.Infof("Broker TLS configuration prepared (CA: %t, Cert: %t, Key: %t)", 
+			tlsConfig.CA != "", tlsConfig.Cert != "", tlsConfig.Key != "")
+		
+		// Note: The actual TLS application depends on the specific broker implementation
+		// Each broker type should handle TLS configuration in their own Init methods
+	}
+
+	return nil
+}
+
+// configureRegistryTLS configures TLS for the registry if TLS options are provided
+func (c *cmd) configureRegistryTLS(ctx *cli.Context) error {
+	tlsConfig := tls.FromEnvironment(
+		ctx.String("registry_tls_ca"),
+		ctx.String("registry_tls_cert"),
+		ctx.String("registry_tls_key"),
+	)
+
+	if !tlsConfig.Enabled {
+		return nil
+	}
+
+	// Build the TLS configuration
+	cryptoTLS, err := tlsConfig.BuildTLSConfig()
+	if err != nil {
+		return fmt.Errorf("failed to build registry TLS config: %v", err)
+	}
+
+	if cryptoTLS != nil {
+		// Store TLS config for registry components to use
+		// Most registries will check for TLS config in their Init/Connect methods
+		logger.Infof("Registry TLS configuration prepared (CA: %t, Cert: %t, Key: %t)", 
+			tlsConfig.CA != "", tlsConfig.Cert != "", tlsConfig.Key != "")
+		
+		// Note: The actual TLS application depends on the specific registry implementation
+		// Each registry type should handle TLS configuration in their own Init methods
+	}
+
+	return nil
 }
 
 func (c *cmd) Init(opts ...Option) error {

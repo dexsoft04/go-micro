@@ -17,8 +17,6 @@ type Codec struct {
 }
 
 func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
-	//logger.Tracef("json ReadHeader %v t%v %s", m.Type, t, string(debug.Stack()))
-
 	return nil
 }
 

@@ -7,6 +7,7 @@ import (
 	"io"
 	"reflect"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"unicode"
@@ -243,6 +244,7 @@ func (s *service) call(ctx context.Context, router *router, sending *sync.Mutex,
 			if err := returnValues[0].Interface(); err != nil {
 				return err.(error)
 			}
+
 			return nil
 		}
 
@@ -549,8 +551,9 @@ func (router *router) ProcessMessage(ctx context.Context, msg Message) (err erro
 	defer func() {
 		// recover any panics
 		if r := recover(); r != nil {
-			router.ops.Logger.Logf(log.ErrorLevel, "router ProcessMessage panic recovered: %v", r)
-			err = merrors.InternalServerError("go.micro.server", "router.ProcessMessage panic recovered: %v", r)
+			router.ops.Logger.Logf(log.ErrorLevel, "panic recovered: %v", r)
+			router.ops.Logger.Log(log.ErrorLevel, string(debug.Stack()))
+			err = merrors.InternalServerError("go.micro.server", "panic recovered: %v", r)
 		}
 	}()
 

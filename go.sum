@@ -254,6 +254,8 @@ github.com/mattn/go-isatty v0.0.16/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/
 github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
+github.com/micro/plugins/v5/auth/jwt v0.0.0-20250502062951-be3f35ce6464 h1:einNYloNFQ4h52c0CBvWv67frSq1xS0EUXCf1ncr1UM=
+github.com/micro/plugins/v5/auth/jwt v0.0.0-20250502062951-be3f35ce6464/go.mod h1:Mqqsr1LYrIiAuqKUI/C0sJRoIB80SATNBagcXjqK7oQ=
 github.com/miekg/dns v1.1.26/go.mod h1:bPDLeHnStXmXAq1m/Ch/hvfNHr14JKNPMBo3VZKjuso=
 github.com/miekg/dns v1.1.41/go.mod h1:p6aan82bvRIyn+zDIv9xYNUpwa73JcSh9BKwknJysuI=
 github.com/miekg/dns v1.1.63 h1:8M5aAw6OMZfFXTT7K5V0Eu5YiiL8l7nUAkyN6C9YwaY=
@@ -546,10 +548,12 @@ google.golang.org/genproto/googleapis/api v0.0.0-20250804133106-a7a43d27e69b h1:
 google.golang.org/genproto/googleapis/api v0.0.0-20250804133106-a7a43d27e69b/go.mod h1:oDOGiMSXHL4sDTJvFvIB9nRQCGdLP1o/iVaqQK8zB+M=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20250804133106-a7a43d27e69b h1:zPKJod4w6F1+nRGDI9ubnXYhU9NSWoFAijkHkUXeTK8=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20250804133106-a7a43d27e69b/go.mod h1:qQ0YXyHHx3XkvlzUtpXDkS29lDSafHMZBAZDc03LQ3A=
+google.golang.org/grpc v1.71.0 h1:kF77BGdPTQ4/JZWMlb9VpJ5pa25aqvVqogsxNHHdeBg=
+google.golang.org/grpc v1.71.0/go.mod h1:H0GRtasmQOh9LkFoCPDu3ZrwUtD1YGE+b2vYBYd/8Ec=
 google.golang.org/grpc v1.74.2 h1:WoosgB65DlWVC9FqI82dGsZhWFNBSLjQ84bjROOpMu4=
 google.golang.org/grpc v1.74.2/go.mod h1:CtQ+BGjaAIXHs/5YS3i473GqwBBa1zGQNevxdeBEXrM=
-google.golang.org/grpc/examples v0.0.0-20250821175240-b0bc6dc1ce38 h1:g/x3Nv2ImXre2VZPlj3LqrVd5JB461jSQo1Pg/qh7cw=
-google.golang.org/grpc/examples v0.0.0-20250821175240-b0bc6dc1ce38/go.mod h1:DCV/pPaCAjP8t014alob5c5bWqurbKmciK7h44GNQM8=
+google.golang.org/grpc/examples v0.0.0-20250826052933-3074bcdd8f3c h1:K1quByOa1O+Fg6aTeXYTIOEeKaD62KKO/rKQrgzr9no=
+google.golang.org/grpc/examples v0.0.0-20250826052933-3074bcdd8f3c/go.mod h1:DCV/pPaCAjP8t014alob5c5bWqurbKmciK7h44GNQM8=
 google.golang.org/protobuf v1.36.6 h1:z1NpPI8ku2WgiWnf+t9wTPsn6eP1L7ksHUlkfLvd9xY=
 google.golang.org/protobuf v1.36.6/go.mod h1:jduwjTPXsFjZGTmRluh+L6NjiWu7pchiJ2/5YcXBHnY=
 gopkg.in/alecthomas/kingpin.v2 v2.2.6/go.mod h1:FMv+mEhP44yOT+4EoQTLFTRgOQ1FBLkstjWtayDeSgw=

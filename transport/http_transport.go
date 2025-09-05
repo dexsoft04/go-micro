@@ -74,7 +74,6 @@ func (h *httpTransport) Dial(addr string, opts ...DialOption) (Client, error) {
 		return nil, err
 	}
 
-	logger.Debugf("httpTransportClient addr:%s opts:%v", addr, h.opts)
 	return &httpTransportClient{
 		ht:       h,
 		addr:     addr,

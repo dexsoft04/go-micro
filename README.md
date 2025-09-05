@@ -160,4 +160,4 @@ There's a new `genai` package for generative AI capabilities. This is an evolvin
 
 ## Adopters
 
-- [Sourse](https://sourse.eu) - Work in the field of earth observation, including embedded Kubernetes running onboard aircraft, and we've built a mission management SaaS platform using Go Micro.
+- [Sourse](https://sourse.eu) - Work in the field of earth observation, including embedded Kubernetes running onboard aircraft, and we’ve built a mission management SaaS platform using Go Micro.

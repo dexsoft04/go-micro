@@ -42,8 +42,6 @@ func id(id string) uint64 {
 }
 
 func (c *protoCodec) Write(m *codec.Message, b interface{}) error {
-	//logger.Tracef("protorpc Write Type:%v %s", m.Type, string(debug.Stack()))
-
 	switch m.Type {
 	case codec.Request:
 		c.Lock()
@@ -124,7 +122,6 @@ func (c *protoCodec) Write(m *codec.Message, b interface{}) error {
 func (c *protoCodec) ReadHeader(m *codec.Message, mt codec.MessageType) error {
 	c.buf.Reset()
 	c.mt = mt
-	//logger.Tracef("protorpc ReadHeader %v %s", m.Header, string(debug.Stack()))
 
 	switch mt {
 	case codec.Request:
@@ -162,8 +159,6 @@ func (c *protoCodec) ReadHeader(m *codec.Message, mt codec.MessageType) error {
 }
 
 func (c *protoCodec) ReadBody(b interface{}) error {
-	//logger.Tracef("protorpc ReadBody %T %s", b, string(debug.Stack()))
-
 	var data []byte
 	switch c.mt {
 	case codec.Request, codec.Response:

@@ -104,8 +104,6 @@ func (h *httpTransportClient) Send(m *Message) error {
 
 // Recv receives a message.
 func (h *httpTransportClient) Recv(msg *Message) (err error) {
-	//log.Tracef("httpTransportSocket Recv Endpoint:[%s] ct:%s %s", msg.Header["Micro-Endpoint"], msg.Header["Content-Type"], string(debug.Stack()))
-
 	if msg == nil {
 		return errors.New("message passed in is nil")
 	}
@@ -140,7 +138,6 @@ func (h *httpTransportClient) Recv(msg *Message) (err error) {
 	// set timeout if its greater than 0
 	if h.ht.opts.Timeout > time.Duration(0) {
 		if err = h.conn.SetDeadline(time.Now().Add(h.ht.opts.Timeout)); err != nil {
-			log.Logf(log.ErrorLevel, "failed to set deadline: %v", err)
 			return err
 		}
 	}
@@ -154,7 +151,6 @@ func (h *httpTransportClient) Recv(msg *Message) (err error) {
 
 	rsp, err := http.ReadResponse(h.buff, req)
 	if err != nil {
-		log.Logf(log.ErrorLevel, "httpTransportSocket Recv %s error: %v", msg.Header["Micro-Endpoint"], err)
 		return err
 	}
 
@@ -166,13 +162,10 @@ func (h *httpTransportClient) Recv(msg *Message) (err error) {
 
 	b, err := io.ReadAll(rsp.Body)
 	if err != nil {
-		log.Logf(log.ErrorLevel, "httpTransportSocket Recv %s error: %v", msg.Header["Micro-Endpoint"], err)
 		return err
 	}
 
 	if rsp.StatusCode != http.StatusOK {
-		log.Logf(log.ErrorLevel, "httpTransportSocket == Body:%s", string(b))
-		log.Logf(log.ErrorLevel, "httpTransportSocket Recv %s error: %v", msg.Header["Micro-Endpoint"], err)
 		return errors.New(rsp.Status + ": " + string(b))
 	}
 

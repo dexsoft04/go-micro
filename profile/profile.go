@@ -20,23 +20,45 @@ import (
 )
 
 type Profile struct {
-	Registry  registry.Registry
-	Broker    broker.Broker
-	Store     store.Store
-	Transport transport.Transport
-	Stream    events.Stream
+	Registry      registry.Registry
+	Broker        broker.Broker
+	Store         store.Store
+	Transport     transport.Transport
+	Stream        events.Stream
+	Observability *ObservabilityConfig
 }
 
 // LocalProfile returns a profile with local mDNS as the registry, HTTP as the broker, file as the store, and HTTP as the transport
 // It is used for local development and testing
 func LocalProfile() (Profile, error) {
 	stream, err := events.NewStream()
+	
+	// Create observability config with tracing disabled by default for local development
+	obsConfig := &ObservabilityConfig{
+		TracingEnabled:  false, // Disable tracing for local development by default
+		MetricsEnabled:  true,  // Enable metrics
+		ServiceName:     "local-service",
+		ServiceVersion:  "dev",
+	}
+	// Check for environment variables
+	if tracingReporter := os.Getenv("MICRO_TRACING_REPORTER_ADDRESS"); len(tracingReporter) > 0 {
+		obsConfig.TracingEnabled = true
+		obsConfig.TracingReporter = tracingReporter
+	}
+	if serviceName := os.Getenv("MICRO_SERVER_NAME"); len(serviceName) > 0 {
+		obsConfig.ServiceName = serviceName
+	}
+	if serviceVersion := os.Getenv("MICRO_SERVER_VERSION"); len(serviceVersion) > 0 {
+		obsConfig.ServiceVersion = serviceVersion
+	}
+	
 	return Profile{
-		Registry:  registry.NewMDNSRegistry(),
-		Broker:    broker.NewHttpBroker(),
-		Store:     store.NewFileStore(),
-		Transport: transport.NewHTTPTransport(),
-		Stream:    stream,
+		Registry:      registry.NewMDNSRegistry(),
+		Broker:        broker.NewHttpBroker(),
+		Store:         store.NewFileStore(),
+		Transport:     transport.NewHTTPTransport(),
+		Stream:        stream,
+		Observability: obsConfig,
 	}, err
 }
 
@@ -64,16 +86,27 @@ func NatsProfile() (Profile, error) {
 		nevents.Address(addr),
 	)
 
+	// Create observability config with both tracing and metrics enabled for production
+	obsConfig := NewObservabilityConfig()
+	// Override service name for NATS profile if not set
+	if len(obsConfig.ServiceName) == 0 {
+		obsConfig.ServiceName = "nats-service"
+	}
+	if len(obsConfig.ServiceVersion) == 0 {
+		obsConfig.ServiceVersion = "1.0.0"
+	}
+
 	registry.DefaultRegistry = reg
 	broker.DefaultBroker = brok
 	store.DefaultStore = st
 	transport.DefaultTransport = tx
 	return Profile{
-		Registry:  reg,
-		Broker:    brok,
-		Store:     st,
-		Transport: tx,
-		Stream:    stream,
+		Registry:      reg,
+		Broker:        brok,
+		Store:         st,
+		Transport:     tx,
+		Stream:        stream,
+		Observability: obsConfig,
 	}, err
 }
 

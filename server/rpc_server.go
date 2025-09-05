@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net"
+	"runtime/debug"
 	"sort"
 	"strconv"
 	"strings"
@@ -111,12 +112,8 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 			select {
 			case <-s.exit:
 			default:
-				// EOF and context canceled are expected when the client closes the connection
-				// These are not real errors and should not be logged as such
-				if !errors.Is(gerr, io.EOF) && 
-					!errors.Is(gerr, context.Canceled) &&
-					!strings.Contains(gerr.Error(), "context canceled") &&
-					!strings.Contains(gerr.Error(), "code = Canceled") {
+				// EOF is expected if the client closes the connection
+				if !errors.Is(gerr, io.EOF) {
 					logger.Logf(log.ErrorLevel, "error while serving connection: %v", gerr)
 				}
 			}
@@ -134,7 +131,8 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 
 		// recover any panics
 		if r := recover(); r != nil {
-			logger.Log(log.ErrorLevel, "rpcServer. ServerConn panic recovered: ", r)
+			logger.Log(log.ErrorLevel, "panic recovered: ", r)
+			logger.Log(log.ErrorLevel, string(debug.Stack()))
 		}
 	}()
 
@@ -154,9 +152,7 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 			// We're saying we essentially can't
 			// use the socket anymore
 			gerr = errors.Wrapf(err, "%s-%s | %s", s.opts.Name, s.opts.Id, sock.Remote())
-			//if err != io.EOF {
-			//	log.Errorf("error while serving connection: %v", gerr)
-			//}
+
 			return
 		}
 
@@ -282,7 +278,6 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 
 		// No legacy codec needed
 		if cf == nil {
-
 			var err error
 			// Try get a new codec
 			if cf, err = s.newCodec(contentType); err != nil {
@@ -857,7 +852,8 @@ func (s *rpcServer) deferer(pool *socket.Pool, psock *socket.Socket, wg *waitGro
 
 	logger := s.opts.Logger
 	if r := recover(); r != nil {
-		logger.Log(log.ErrorLevel, "rpcServer deferer panic recovered: ", r)
+		logger.Log(log.ErrorLevel, "panic recovered: ", r)
+		logger.Log(log.ErrorLevel, string(debug.Stack()))
 	}
 }
 

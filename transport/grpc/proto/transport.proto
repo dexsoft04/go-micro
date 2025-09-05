@@ -1,17 +1,3 @@
-<<<<<<< HEAD
-syntax = "proto3";
-
-package go.micro.transport.grpc;
-
-service Transport {
-	rpc Stream(stream Message) returns (stream Message) {}
-}
-
-message Message {
-	map<string, string> header = 1;
-	bytes body = 2;
-}
-=======
 syntax = "proto3";
 
 option go_package = "./proto;transport";
@@ -26,4 +12,3 @@ message Message {
 	map<string, string> header = 1;
 	bytes body = 2;
 }
->>>>>>> 95540b7859680eabbc325e01afc844d3d64e1e62

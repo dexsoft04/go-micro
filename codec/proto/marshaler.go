@@ -2,6 +2,7 @@ package proto
 
 import (
 	"bytes"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/oxtoacart/bpool"
 	"go-micro.dev/v5/codec"
@@ -13,7 +14,6 @@ var bufferPool = bpool.NewSizedBufferPool(16, 256)
 type Marshaler struct{}
 
 func (Marshaler) Marshal(v interface{}) ([]byte, error) {
-	//logger.Tracef("proto Marshal %T %s", v, string(debug.Stack()))
 	pb, ok := v.(proto.Message)
 	if !ok {
 		return nil, codec.ErrInvalidMessage
@@ -34,8 +34,6 @@ func (Marshaler) Marshal(v interface{}) ([]byte, error) {
 }
 
 func (Marshaler) Unmarshal(data []byte, v interface{}) error {
-	//logger.Tracef("proto Unmarshal %T %s", v, string(debug.Stack()))
-
 	pb, ok := v.(proto.Message)
 	if !ok {
 		return codec.ErrInvalidMessage

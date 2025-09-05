@@ -112,7 +112,6 @@ func (s *service) Stop() error {
 		err = fn()
 	}
 
-	log.Debugf("stop %T", s.opts.Server)
 	if err := s.opts.Server.Stop(); err != nil {
 		return err
 	}
