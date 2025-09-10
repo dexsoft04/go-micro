@@ -170,8 +170,8 @@ func (g *grpcServer) createSubHandler(sb *subscriber, opts server.Options) broke
 	return func(p broker.Event) (err error) {
 		defer func() {
 			if r := recover(); r != nil {
-				g.opts.Logger.Log(logger.ErrorLevel, "panic recovered: ", r)
-				g.opts.Logger.Log(logger.ErrorLevel, string(debug.Stack()))
+				g.opts.Logger.Log(log.ErrorLevel, "panic recovered: ", r)
+				g.opts.Logger.Log(log.ErrorLevel, string(debug.Stack()))
 				err = errors.InternalServerError("go.micro.server", "panic recovered: %v", r)
 			}
 		}()

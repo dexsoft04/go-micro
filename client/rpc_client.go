@@ -53,16 +53,10 @@ func newRPCClient(opt ...Option) Client {
 		pool.Transport(opts.Transport),
 		pool.CloseTimeout(opts.PoolCloseTimeout),
 	)
-	//gp := pool.NewPool(
-	//	pool.Size(opts.PoolSize),
-	//	pool.TTL(opts.PoolTTL),
-	//	pool.Transport(opts.GrpcTransport),
-	//	pool.CloseTimeout(opts.PoolCloseTimeout),
-	//)
+	// Note: Previous dual-pool strategy with separate gRPC transport removed for simplification
 	rc := &rpcClient{
 		opts: opts,
 		pool: p,
-		//grpcPool: gp,
 		seq: 0,
 	}
 	rc.once.Store(false)
@@ -589,7 +583,7 @@ func (r *rpcClient) grpcStream(ctx context.Context, node *registry.Node, req Req
 		dOpts = append(dOpts, transport.WithTimeout(opts.DialTimeout))
 	}
 
-	c, err := r.opts.GrpcTransport.Dial(address, dOpts...)
+	c, err := r.opts.Transport.Dial(address, dOpts...)
 	if err != nil {
 		return nil, merrors.InternalServerError("go.micro.client", "connection error: %v", err)
 	}
@@ -665,8 +659,6 @@ func (r *rpcClient) Init(opts ...Option) error {
 	size := r.opts.PoolSize
 	ttl := r.opts.PoolTTL
 	tr := r.opts.Transport
-	gr := r.opts.GrpcTransport
-
 	for _, o := range opts {
 		o(&r.opts)
 	}
@@ -683,20 +675,6 @@ func (r *rpcClient) Init(opts ...Option) error {
 			pool.Size(r.opts.PoolSize),
 			pool.TTL(r.opts.PoolTTL),
 			pool.Transport(r.opts.Transport),
-		)
-	}
-	if size != r.opts.PoolSize || ttl != r.opts.PoolTTL || r.opts.GrpcTransport != gr {
-		if r.grpcPool != nil {
-			if err := r.grpcPool.Close(); err != nil {
-				return errors.Wrap(err, "failed to close grpc pool")
-			}
-		}
-
-		log.Debugf("==== grpc poll %v", r.opts.GrpcTransport.String())
-		r.grpcPool = pool.NewPool(
-			pool.Size(r.opts.PoolSize),
-			pool.TTL(r.opts.PoolTTL),
-			pool.Transport(r.opts.GrpcTransport),
 		)
 	}
 	return nil
