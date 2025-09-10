@@ -817,6 +817,14 @@ func (c *cmd) setTransport(t transport.Transport) ([]server.Option, []client.Opt
 	serverOpts = append(serverOpts, server.Transport(*c.opts.Transport))
 	clientOpts = append(clientOpts, client.Transport(*c.opts.Transport))
 	transport.DefaultTransport = *c.opts.Transport
+	
+	// Always set up gRPC transport if available
+	if grpcTransport, ok := DefaultTransports["grpc"]; ok && transport.DefaultGrpcTransport == nil {
+		transport.DefaultGrpcTransport = grpcTransport()
+		clientOpts = append(clientOpts, client.GrpcTransport(transport.DefaultGrpcTransport))
+		logger.Debugf("setTransport: initialized DefaultGrpcTransport: %s", transport.DefaultGrpcTransport.String())
+	}
+	
 	return serverOpts, clientOpts
 }
 

@@ -40,9 +40,10 @@ type Options struct {
 	// Router sets the router
 	Router Router
 
-	Registry  registry.Registry
-	Selector  selector.Selector
-	Transport transport.Transport
+	Registry      registry.Registry
+	Selector      selector.Selector
+	Transport     transport.Transport
+	GrpcTransport transport.Transport
 
 	// Plugged interfaces
 	Broker broker.Broker
@@ -150,6 +151,7 @@ func NewOptions(options ...Option) Options {
 		Selector:         selector.DefaultSelector,
 		Registry:         registry.DefaultRegistry,
 		Transport:        transport.DefaultTransport,
+		GrpcTransport:    transport.DefaultGrpcTransport,
 		Logger:           logger.DefaultLogger,
 	}
 
@@ -215,6 +217,13 @@ func Registry(r registry.Registry) Option {
 func Transport(t transport.Transport) Option {
 	return func(o *Options) {
 		o.Transport = t
+	}
+}
+
+// GrpcTransport to use for gRPC communication.
+func GrpcTransport(t transport.Transport) Option {
+	return func(o *Options) {
+		o.GrpcTransport = t
 	}
 }
 

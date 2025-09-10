@@ -29,6 +29,8 @@ type grpcTransportListener struct {
 
 func init() {
 	cmd.DefaultTransports["grpc"] = NewTransport
+	// Set up DefaultGrpcTransport directly
+	transport.DefaultGrpcTransport = NewTransport()
 }
 
 func getTLSConfig(addr string) (*tls.Config, error) {

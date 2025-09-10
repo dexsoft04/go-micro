@@ -31,6 +31,7 @@ const (
 	packageID = "go.micro.client"
 )
 
+
 type rpcClient struct {
 	opts     Options
 	once     atomic.Value
@@ -54,21 +55,32 @@ func newRPCClient(opt ...Option) Client {
 		pool.CloseTimeout(opts.PoolCloseTimeout),
 	)
 	
-	// Create gRPC pool for gRPC transport compatibility
-	// Use the same transport for now, but gRPC calls will have better protocol detection
-	gp := pool.NewPool(
-		pool.Size(opts.PoolSize),
-		pool.TTL(opts.PoolTTL),
-		pool.Transport(opts.Transport),
-		pool.CloseTimeout(opts.PoolCloseTimeout),
-	)
-	
+	// Create rpcClient with proper initialization
 	rc := &rpcClient{
 		opts:     opts,
 		pool:     p,
-		grpcPool: gp,
 		seq:      0,
 	}
+	
+	// Create gRPC pool using configured gRPC transport
+	var grpcTransport transport.Transport
+	if opts.GrpcTransport != nil {
+		grpcTransport = opts.GrpcTransport
+		log.Debugf("newRPCClient: using configured gRPC transport: %s", grpcTransport.String())
+	} else {
+		// Fallback to regular transport if no gRPC transport configured
+		grpcTransport = opts.Transport
+		log.Debugf("newRPCClient: gRPC transport not configured, using regular transport: %s", grpcTransport.String())
+	}
+	
+	gp := pool.NewPool(
+		pool.Size(opts.PoolSize),
+		pool.TTL(opts.PoolTTL),
+		pool.Transport(grpcTransport),
+		pool.CloseTimeout(opts.PoolCloseTimeout),
+	)
+	
+	rc.grpcPool = gp
 	rc.once.Store(false)
 
 	c := Client(rc)
@@ -669,6 +681,7 @@ func (r *rpcClient) Init(opts ...Option) error {
 	size := r.opts.PoolSize
 	ttl := r.opts.PoolTTL
 	tr := r.opts.Transport
+	grpcTr := r.opts.GrpcTransport
 	for _, o := range opts {
 		o(&r.opts)
 	}
@@ -686,6 +699,33 @@ func (r *rpcClient) Init(opts ...Option) error {
 			pool.TTL(r.opts.PoolTTL),
 			pool.Transport(r.opts.Transport),
 		)
+	}
+	
+	// update grpc pool configuration if gRPC transport changed
+	if grpcTr != r.opts.GrpcTransport {
+		if r.grpcPool != nil {
+			if err := r.grpcPool.Close(); err != nil {
+				return errors.Wrap(err, "failed to close grpc pool")
+			}
+		}
+		
+		// Determine which transport to use for gRPC pool
+		var grpcTransport transport.Transport
+		if r.opts.GrpcTransport != nil {
+			grpcTransport = r.opts.GrpcTransport
+		} else {
+			grpcTransport = r.opts.Transport
+		}
+		
+		// create new gRPC pool
+		r.grpcPool = pool.NewPool(
+			pool.Size(r.opts.PoolSize),
+			pool.TTL(r.opts.PoolTTL),
+			pool.Transport(grpcTransport),
+			pool.CloseTimeout(r.opts.PoolCloseTimeout),
+		)
+		
+		log.Debugf("Init: recreated gRPC pool with transport: %s", grpcTransport.String())
 	}
 	return nil
 }
@@ -811,28 +851,7 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 		
 		if ts == "grpc" {
 			log.Debugf("proxyCall: using gRPC transport for %s", req.Service())
-			err := r.grpcCall(ctx, node, req, resp, opts)
-			
-			// If gRPC call fails with protocol mismatch, fallback to HTTP (v5.6.0-beta behavior)
-			if err != nil {
-				if ve, ok := err.(*merrors.Error); ok && ve.Code == 500 && 
-					strings.Contains(ve.Detail, "malformed HTTP response") {
-					log.Warnf("proxyCall: gRPC call failed with protocol mismatch for %s, falling back to HTTP", req.Service())
-					
-					// Clear the cached transport info
-					r.transportCache.Delete(node.Id)
-					
-					// Try HTTP call as fallback
-					err = r.call(ctx, node, req, resp, opts)
-					if err == nil {
-						// HTTP worked, cache this for future calls
-						r.transportCache.Store(node.Id, "http")
-						log.Infof("proxyCall: successfully fell back to HTTP for service %s node=%s", req.Service(), node.Id)
-						return nil
-					}
-				}
-			}
-			return err
+			return r.grpcCall(ctx, node, req, resp, opts)
 		}
 		
 		log.Debugf("proxyCall: using HTTP transport for %s", req.Service())
