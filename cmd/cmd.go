@@ -352,16 +352,6 @@ var (
 
 func init() {
 	rand.Seed(time.Now().Unix())
-	
-	// Initialize DefaultGrpcTransport if grpc transport is available
-	// This is needed because transport/grpc cannot import cmd package
-	// to avoid circular dependency
-	if grpcTransport, ok := DefaultTransports["grpc"]; ok {
-		if transport.DefaultGrpcTransport == nil {
-			transport.DefaultGrpcTransport = grpcTransport()
-			logger.Debugf("init: initialized DefaultGrpcTransport")
-		}
-	}
 }
 
 func newCmd(opts ...Option) Cmd {
@@ -616,6 +606,15 @@ func (c *cmd) Before(ctx *cli.Context) error {
 		serverOpts = append(serverOpts, sopts...)
 		clientOpts = append(clientOpts, clopts...)
 
+	}
+
+	// Initialize DefaultGrpcTransport for backward compatibility
+	if t, ok := DefaultTransports["grpc"]; ok {
+		if transport.DefaultGrpcTransport == nil {
+			transport.DefaultGrpcTransport = t()
+			clientOpts = append(clientOpts, client.GrpcTransport(transport.DefaultGrpcTransport))
+			logger.Debugf("Before: initialized DefaultGrpcTransport")
+		}
 	}
 
 	// Parse the server options
