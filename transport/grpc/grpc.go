@@ -4,7 +4,6 @@ package grpc
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"net"
 
 	"go-micro.dev/v5/cmd"

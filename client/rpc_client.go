@@ -66,13 +66,13 @@ func newRPCClient(opt ...Option) Client {
 	var grpcTransport transport.Transport
 	if opts.GrpcTransport != nil {
 		grpcTransport = opts.GrpcTransport
-		log.Debugf("newRPCClient: using configured gRPC transport: %s", grpcTransport.String())
 	} else if transport.DefaultGrpcTransport != nil {
-		// Use DefaultGrpcTransport set by grpc transport init()
 		grpcTransport = transport.DefaultGrpcTransport
-		log.Debugf("newRPCClient: using DefaultGrpcTransport: %s", grpcTransport.String())
 	} else {
-		log.Fatalf("newRPCClient: gRPC transport not available, ensure grpc transport is imported")
+		// DefaultGrpcTransport is nil, use HTTP transport as fallback
+		// This ensures the gRPC pool won't crash even if grpc package isn't imported
+		log.Warn("DefaultGrpcTransport is nil, using HTTP transport as fallback for gRPC pool")
+		grpcTransport = transport.DefaultTransport
 	}
 	
 	gp := pool.NewPool(
