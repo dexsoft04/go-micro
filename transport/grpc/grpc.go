@@ -4,6 +4,7 @@ package grpc
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net"
 
 	"go-micro.dev/v5/cmd"
@@ -31,6 +32,7 @@ func init() {
 	cmd.DefaultTransports["grpc"] = NewTransport
 	// Set up DefaultGrpcTransport directly
 	transport.DefaultGrpcTransport = NewTransport()
+	fmt.Printf("grpc transport init: DefaultGrpcTransport set to %v\n", transport.DefaultGrpcTransport)
 }
 
 func getTLSConfig(addr string) (*tls.Config, error) {
