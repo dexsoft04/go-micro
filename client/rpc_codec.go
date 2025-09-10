@@ -148,11 +148,21 @@ func setupProtocol(msg *transport.Message, node *registry.Node) codec.NewCodec {
 	}
 
 	// no protocol use old codecs
-	switch msg.Header["Content-Type"] {
+	contentType := msg.Header["Content-Type"]
+	if contentType == "" {
+		contentType = "application/json" // default to JSON when Content-Type is missing
+	}
+
+	switch contentType {
 	case "application/json":
 		msg.Header["Content-Type"] = "application/json-rpc"
 	case "application/protobuf":
 		msg.Header["Content-Type"] = "application/proto-rpc"
+	default:
+		// for unknown content types, check if codec exists, otherwise default to JSON
+		if _, ok := defaultCodecs[contentType]; !ok {
+			msg.Header["Content-Type"] = "application/json-rpc"
+		}
 	}
 
 	return defaultCodecs[msg.Header["Content-Type"]]

@@ -1,0 +1,76 @@
+# OpenTelemetry configuration for RPC timing
+# This file shows example configuration for different environments
+
+# Development configuration - verbose logging
+development:
+  logging:
+    level: debug  # Enable detailed timing logs (RPC_TIMING_DETAIL)
+    output: stdout
+    format: json  # Structured format for easier parsing
+  
+  tracing:
+    enabled: true
+    exporter: stdout  # For development debugging
+    sampler: always   # Sample all requests
+    
+  timing:
+    enable_client_wrapper: true
+    enable_server_wrapper: true
+    enable_call_wrapper: false  # Optional, more granular
+    log_slow_requests_threshold_ms: 50  # Log requests slower than 50ms
+
+# Production configuration - balanced logging
+production:
+  logging:
+    level: info  # Only high-level timing logs (RPC_TIMING, RPC_TIMING_SERVER)
+    output: file
+    file: /var/log/app/timing.log
+    format: json
+    
+  tracing:
+    enabled: true
+    exporter: jaeger  # Or tempo, zipkin
+    endpoint: http://jaeger:14268/api/traces
+    sampler: probability
+    sample_rate: 0.1  # Sample 10% of requests
+    
+  timing:
+    enable_client_wrapper: true
+    enable_server_wrapper: true
+    log_slow_requests_threshold_ms: 100
+
+# Testing configuration - detailed analysis
+testing:
+  logging:
+    level: debug
+    output: file
+    file: ./test_timing.log
+    format: text  # Human readable for analysis
+    
+  tracing:
+    enabled: true
+    exporter: stdout
+    sampler: always
+    
+  timing:
+    enable_client_wrapper: true
+    enable_server_wrapper: true
+    enable_call_wrapper: true  # Extra granular for testing
+    log_slow_requests_threshold_ms: 10  # Very sensitive for testing
+
+# High-performance production - minimal logging
+performance:
+  logging:
+    level: warn  # Only errors and warnings
+    output: file
+    
+  tracing:
+    enabled: true
+    exporter: jaeger
+    sampler: probability
+    sample_rate: 0.01  # Sample only 1% of requests
+    
+  timing:
+    enable_client_wrapper: false  # Disable for maximum performance
+    enable_server_wrapper: false
+    log_slow_requests_threshold_ms: 500  # Only very slow requests
