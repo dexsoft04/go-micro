@@ -3,6 +3,7 @@ package addr
 
 import (
 	"net"
+	"os"
 
 	"github.com/pkg/errors"
 )
@@ -38,6 +39,13 @@ func IsLocal(addr string) bool {
 // address, it will be returned directly. Otherwise, the available interfaces
 // will be iterated over to find an IP address, preferably private.
 func Extract(addr string) (string, error) {
+	// Fly.io environment priority handling
+	if os.Getenv("FLY_MACHINE_ID") != "" {
+		if flyIP := os.Getenv("FLY_PRIVATE_IP"); flyIP != "" {
+			return flyIP, nil
+		}
+	}
+	
 	// if addr is already specified then it's directly returned
 	if len(addr) > 0 && (addr != "0.0.0.0" && addr != "[::]" && addr != "::") {
 		return addr, nil

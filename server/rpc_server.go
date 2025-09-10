@@ -22,6 +22,7 @@ import (
 	"go-micro.dev/v5/transport/headers"
 	"go-micro.dev/v5/util/addr"
 	"go-micro.dev/v5/util/backoff"
+	"go-micro.dev/v5/util/fly"
 	mnet "go-micro.dev/v5/util/net"
 	"go-micro.dev/v5/util/socket"
 )
@@ -404,11 +405,10 @@ func (s *rpcServer) Register() error {
 	}
 
 	node := &registry.Node{
-		// TODO: node id should be set better. Add native option to specify
-		// host id through either config or ENV. Also look at logging of name.
-		Id:       config.Name + "-" + config.Id,
+		// Use Fly.io machine ID if available, otherwise use default format
+		Id:       fly.GetNodeID(config.Name, config.Id),
 		Address:  addr,
-		Metadata: s.newNodeMetedata(config),
+		Metadata: fly.GetNodeMetadata(s.newNodeMetedata(config)),
 	}
 
 	service := &registry.Service{
@@ -643,17 +643,23 @@ func (s *rpcServer) getAddr(config Options) (string, bool, error) {
 
 	validHost := net.ParseIP(host) != nil
 
-	addr, err := addr.Extract(host)
+	extractedAddr, err := addr.Extract(host)
 	if err != nil {
 		return "", false, err
 	}
 
-	// mq-rpc(eg. nats) doesn't need the port. its addr is queue name.
-	if port != "" {
-		addr = mnet.HostPort(addr, port)
+	// For Fly.io IPv6 addresses, ensure proper formatting
+	if fly.IsFlyEnvironment() && strings.Contains(extractedAddr, ":") {
+		extractedAddr = fly.FormatIPv6Address(extractedAddr, port)
+		return extractedAddr, true, nil
 	}
 
-	return addr, validHost, nil
+	// mq-rpc(eg. nats) doesn't need the port. its addr is queue name.
+	if port != "" {
+		extractedAddr = mnet.HostPort(extractedAddr, port)
+	}
+
+	return extractedAddr, validHost, nil
 }
 
 // newNodeMetedata creates a new metadata map with default values.

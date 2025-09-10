@@ -11,6 +11,7 @@ import (
 	log "go-micro.dev/v5/logger"
 	"go-micro.dev/v5/server"
 	"go-micro.dev/v5/store"
+	"go-micro.dev/v5/util/fly"
 	signalutil "go-micro.dev/v5/util/signal"
 )
 
@@ -34,6 +35,9 @@ func (s *service) Name() string {
 // which parses command line flags. cmd.Init is only called
 // on first Init.
 func (s *service) Init(opts ...Option) {
+	// Auto-configure Fly.io environment before processing options
+	fly.AutoConfigureEnvironment()
+	
 	// process options
 	for _, o := range opts {
 		o(&s.opts)
