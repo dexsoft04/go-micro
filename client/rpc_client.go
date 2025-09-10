@@ -53,11 +53,20 @@ func newRPCClient(opt ...Option) Client {
 		pool.Transport(opts.Transport),
 		pool.CloseTimeout(opts.PoolCloseTimeout),
 	)
-	// Note: Previous dual-pool strategy with separate gRPC transport removed for simplification
+	
+	// Create gRPC pool for gRPC transport compatibility
+	gp := pool.NewPool(
+		pool.Size(opts.PoolSize),
+		pool.TTL(opts.PoolTTL),
+		pool.Transport(opts.Transport),
+		pool.CloseTimeout(opts.PoolCloseTimeout),
+	)
+	
 	rc := &rpcClient{
-		opts: opts,
-		pool: p,
-		seq: 0,
+		opts:     opts,
+		pool:     p,
+		grpcPool: gp,
+		seq:      0,
 	}
 	rc.once.Store(false)
 
