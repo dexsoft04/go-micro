@@ -244,6 +244,9 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 		to := msg.Header["Timeout"]
 		// We use this Content-Type header to identify the codec needed
 		contentType := msg.Header["Content-Type"]
+		
+		// Log received Content-Type for debugging
+		log.Debugf("rpc_server: received request with Content-Type=%s", contentType)
 
 		// Copy the message headers
 		header := make(map[string]string, len(msg.Header))

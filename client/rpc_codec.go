@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	errs "errors"
+	"strings"
 	"go-micro.dev/v5/codec"
 	raw "go-micro.dev/v5/codec/bytes"
 	"go-micro.dev/v5/codec/grpc"
@@ -148,24 +149,37 @@ func setupProtocol(msg *transport.Message, node *registry.Node) codec.NewCodec {
 	}
 
 	// no protocol use old codecs
-	contentType := msg.Header["Content-Type"]
+	originalContentType := msg.Header["Content-Type"]
+	contentType := originalContentType
 	if contentType == "" {
 		contentType = "application/json" // default to JSON when Content-Type is missing
+		logger.Debugf("setupProtocol: Content-Type was empty, defaulting to: %s", contentType)
+	} else {
+		logger.Debugf("setupProtocol: original Content-Type: %s", originalContentType)
 	}
 
 	switch contentType {
 	case "application/json":
 		msg.Header["Content-Type"] = "application/json-rpc"
+		logger.Debugf("setupProtocol: mapped JSON to json-rpc codec")
 	case "application/protobuf":
 		msg.Header["Content-Type"] = "application/proto-rpc"
+		logger.Debugf("setupProtocol: mapped protobuf to proto-rpc codec")
 	default:
 		// for unknown content types, check if codec exists, otherwise default to JSON
 		if _, ok := defaultCodecs[contentType]; !ok {
+			logger.Debugf("setupProtocol: unknown Content-Type %s, defaulting to json-rpc", contentType)
 			msg.Header["Content-Type"] = "application/json-rpc"
+		} else {
+			logger.Debugf("setupProtocol: using existing codec for Content-Type: %s", contentType)
 		}
 	}
 
-	return defaultCodecs[msg.Header["Content-Type"]]
+	finalContentType := msg.Header["Content-Type"]
+	codec := defaultCodecs[finalContentType]
+	logger.Debugf("setupProtocol: final Content-Type: %s, codec found: %t", finalContentType, codec != nil)
+
+	return codec
 }
 
 func newRPCCodec(req *transport.Message, client transport.Client, c codec.NewCodec, stream string) codec.Codec {
@@ -242,7 +256,16 @@ func (c *rpcCodec) ReadHeader(msg *codec.Message, r codec.MessageType) error {
 
 	// read message from transport
 	if err := c.client.Recv(&tm); err != nil {
-		logger.Errorf("go.micro.client.transport client:%T msgType:%v ct:%s err:%v", c.client, msg.Type, msg.Header["Content-Type"], err.Error())
+		// Enhanced error logging with more context
+		logger.Errorf("ReadHeader: transport receive error - client:%T msgType:%v contentType:%s err:%v", 
+			c.client, msg.Type, msg.Header["Content-Type"], err.Error())
+		
+		// Log raw error details for debugging protocol mismatches
+		if strings.Contains(err.Error(), "malformed HTTP") {
+			logger.Errorf("ReadHeader: detected malformed HTTP response, possible protocol mismatch")
+			logger.Debugf("ReadHeader: error details - %+v", err)
+		}
+		
 		return errors.InternalServerError("go.micro.client.transport 666", err.Error())
 	}
 
@@ -251,6 +274,10 @@ func (c *rpcCodec) ReadHeader(msg *codec.Message, r codec.MessageType) error {
 
 	// set headers from transport
 	msg.Header = tm.Header
+	
+	// Log received headers for debugging
+	logger.Debugf("ReadHeader: received headers - %+v", tm.Header)
+	logger.Debugf("ReadHeader: message body length - %d bytes", len(tm.Body))
 
 	// read header
 	err := c.codec.ReadHeader(msg, r)
@@ -260,7 +287,8 @@ func (c *rpcCodec) ReadHeader(msg *codec.Message, r codec.MessageType) error {
 
 	// return header error
 	if err != nil {
-		logger.Errorf("go.micro.client.transport %v %s %v", msg, msg.Header["Content-Type"], err.Error())
+		logger.Errorf("ReadHeader: codec read error - msg:%v contentType:%s codecType:%s err:%v", 
+			msg, msg.Header["Content-Type"], c.codec.String(), err.Error())
 		return errors.InternalServerError("go.micro.client.codec 1111", "%s c.codec[%s]", err.Error(), c.codec.String())
 	}
 

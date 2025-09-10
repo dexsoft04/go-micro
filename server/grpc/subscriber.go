@@ -9,7 +9,7 @@ import (
 
 	"go-micro.dev/v5/broker"
 	"go-micro.dev/v5/errors"
-	"go-micro.dev/v5/logger"
+	log "go-micro.dev/v5/logger"
 	"go-micro.dev/v5/metadata"
 	"go-micro.dev/v5/registry"
 	"go-micro.dev/v5/server"
@@ -187,6 +187,10 @@ func (g *grpcServer) createSubHandler(sb *subscriber, opts server.Options) broke
 			msg.Header["Content-Type"] = defaultContentType
 			ct = defaultContentType
 		}
+		
+		// Log received Content-Type for gRPC subscriber
+		log.Debugf("grpc_subscriber: processing message with Content-Type=%s", ct)
+		
 		cf, err := g.newGRPCCodec(ct)
 		if err != nil {
 			return err
