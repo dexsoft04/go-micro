@@ -55,6 +55,7 @@ func newRPCClient(opt ...Option) Client {
 	)
 	
 	// Create gRPC pool for gRPC transport compatibility
+	// Use the same transport for now, but gRPC calls will have better protocol detection
 	gp := pool.NewPool(
 		pool.Size(opts.PoolSize),
 		pool.TTL(opts.PoolTTL),
@@ -810,7 +811,28 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 		
 		if ts == "grpc" {
 			log.Debugf("proxyCall: using gRPC transport for %s", req.Service())
-			return r.grpcCall(ctx, node, req, resp, opts)
+			err := r.grpcCall(ctx, node, req, resp, opts)
+			
+			// If gRPC call fails with protocol mismatch, fallback to HTTP (v5.6.0-beta behavior)
+			if err != nil {
+				if ve, ok := err.(*merrors.Error); ok && ve.Code == 500 && 
+					strings.Contains(ve.Detail, "malformed HTTP response") {
+					log.Warnf("proxyCall: gRPC call failed with protocol mismatch for %s, falling back to HTTP", req.Service())
+					
+					// Clear the cached transport info
+					r.transportCache.Delete(node.Id)
+					
+					// Try HTTP call as fallback
+					err = r.call(ctx, node, req, resp, opts)
+					if err == nil {
+						// HTTP worked, cache this for future calls
+						r.transportCache.Store(node.Id, "http")
+						log.Infof("proxyCall: successfully fell back to HTTP for service %s node=%s", req.Service(), node.Id)
+						return nil
+					}
+				}
+			}
+			return err
 		}
 		
 		log.Debugf("proxyCall: using HTTP transport for %s", req.Service())
