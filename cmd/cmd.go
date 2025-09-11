@@ -6,14 +6,18 @@ import (
 	"math/rand"
 	"sort"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/philchia/agollo/v4"
 	"github.com/urfave/cli/v2"
+	"github.com/zigo2048/mcbeam-common-lib/common/config"
+	mconfig "go-micro.dev/v5/config"
+	"github.com/zigo2048/mcbeam-common-lib/plugins/config/apollo/v3"
 	"go-micro.dev/v5/cache"
 	"go-micro.dev/v5/cache/redis"
 	"go-micro.dev/v5/client"
-	"go-micro.dev/v5/config"
 	"go-micro.dev/v5/config/tls"
 	"go-micro.dev/v5/debug/profile"
 	"go-micro.dev/v5/debug/profile/http"
@@ -337,7 +341,7 @@ var (
 		"pprof": pprof.NewProfile,
 	}
 
-	DefaultConfigs = map[string]func(...config.Option) (config.Config, error){}
+	DefaultConfigs = map[string]func(...mconfig.Option) (mconfig.Config, error){}
 
 	DefaultCaches = map[string]func(...cache.Option) cache.Cache{
 		"redis": redis.NewRedisCache,
@@ -366,7 +370,7 @@ func newCmd(opts ...Option) Cmd {
 		Store:        &store.DefaultStore,
 		Tracer:       &trace.DefaultTracer,
 		DebugProfile: &profile.DefaultProfile,
-		Config:       &config.DefaultConfig,
+		Config:       &mconfig.DefaultConfig,
 		Cache:        &cache.DefaultCache,
 		Stream:       &events.DefaultStream,
 
@@ -617,6 +621,18 @@ func (c *cmd) Before(ctx *cli.Context) error {
 		}
 	}
 
+	// Initialize config.DefaultConfig for Apollo configuration if needed
+	if config.DefaultConfig == nil && shouldInitializeApollo() {
+		config.DefaultConfig = apollo.NewConfig(apollo.WithConfig(&agollo.Conf{
+			AppID:          os.Getenv("MICRO_NAMESPACE"),
+			Cluster:        "default",
+			NameSpaceNames: []string{getNamespace()},
+			MetaAddr:       os.Getenv("MICRO_CONFIG_ADDRESS"),
+			CacheDir:       filepath.Join(os.TempDir(), "apollo"),
+		}))
+		logger.Debugf("Before: initialized config.DefaultConfig with Apollo")
+	}
+
 	// Parse the server options
 	metadata := make(map[string]string)
 	for _, d := range ctx.StringSlice("server_metadata") {
@@ -764,7 +780,7 @@ func (c *cmd) Before(ctx *cli.Context) error {
 				logger.Fatalf("Error configuring config: %v", err)
 			}
 			*c.opts.Config = rc
-			config.DefaultConfig = *c.opts.Config
+			mconfig.DefaultConfig = *c.opts.Config
 		}
 	}
 	return nil
@@ -956,4 +972,34 @@ func setGenAIFromFlags(ctx *cli.Context) {
 	default:
 		genai.DefaultGenAI = genai.Default
 	}
+}
+
+
+// shouldInitializeApollo checks if Apollo configuration should be initialized
+func shouldInitializeApollo() bool {
+	// Don't initialize Apollo in test environment
+	if os.Getenv("GO_ENV") == "test" || os.Getenv("MICRO_CONFIG") == "memory" {
+		return false
+	}
+	
+	// Don't initialize if required Apollo environment variables are missing
+	if os.Getenv("MICRO_CONFIG_ADDRESS") == "" {
+		return false
+	}
+	
+	// Don't initialize if explicitly disabled
+	if os.Getenv("MICRO_CONFIG_DISABLED") == "true" {
+		return false
+	}
+	
+	return true
+}
+
+// getNamespace returns the namespace name for Apollo configuration
+func getNamespace() string {
+	if serverName := os.Getenv("MICRO_SERVER_NAME"); serverName != "" {
+		return serverName + ".yaml"
+	}
+	// Fallback to application.yaml if MICRO_SERVER_NAME is not set
+	return "application.yaml"
 }
