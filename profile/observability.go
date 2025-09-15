@@ -20,8 +20,6 @@ import (
 
 	"github.com/zigo2048/mcbeam-common-lib/common/metrics"
 	metricsWrapper "github.com/zigo2048/mcbeam-common-lib/common/metrics/wrapper"
-	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader"
-	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/wrapper"
 	"github.com/zigo2048/mcbeam-common-lib/plugins/prometheus/v3"
 )
 
@@ -139,8 +137,6 @@ func initMetrics(srv *server.Server, config *ObservabilityConfig) error {
 	// Add metrics and other wrappers to default server
 	err = server.DefaultServer.Init(
 		server.WrapHandler(metricsWrapper.New(reporter).HandlerFunc),
-		server.WrapHandler(apiheader.NewDefaultHeaderHandlerWrapper),
-		server.WrapHandler(wrapper.AuthHandler()),
 	)
 	if err != nil {
 		logger.Fatalf("init default server err:%s", err)

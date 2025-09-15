@@ -45,6 +45,9 @@ import (
 	postgres "go-micro.dev/v5/store/postgres"
 	"go-micro.dev/v5/transport"
 	ntransport "go-micro.dev/v5/transport/nats"
+
+	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader"
+	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/wrapper"
 )
 
 type Cmd interface {
@@ -783,6 +786,16 @@ func (c *cmd) Before(ctx *cli.Context) error {
 			mconfig.DefaultConfig = *c.opts.Config
 		}
 	}
+
+	// Initialize core server wrappers
+	err := server.DefaultServer.Init(
+		server.WrapHandler(apiheader.NewDefaultHeaderHandlerWrapper),
+		server.WrapHandler(wrapper.AuthHandler()),
+	)
+	if err != nil {
+		logger.Fatalf("Error initializing core server wrappers: %v", err)
+	}
+
 	return nil
 }
 
