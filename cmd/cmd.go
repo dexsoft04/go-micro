@@ -25,7 +25,6 @@ import (
 	"go-micro.dev/v5/debug/trace"
 	"go-micro.dev/v5/events"
 	"go-micro.dev/v5/logger"
-	mprofile "go-micro.dev/v5/profile"
 	"go-micro.dev/v5/auth"
 	"go-micro.dev/v5/broker"
 	nbroker "go-micro.dev/v5/broker/nats"
@@ -169,11 +168,6 @@ var (
 			Name:    "broker_tls_key",
 			EnvVars: []string{"MICRO_BROKER_TLS_KEY"},
 			Usage:   "Comma-separated list of broker tls key",
-		},
-		&cli.StringFlag{
-			Name:    "profile",
-			Usage:   "Plugin profile to use. (local, nats, etc)",
-			EnvVars: []string{"MICRO_PROFILE"},
 		},
 		&cli.StringFlag{
 			Name:    "debug-profile",
@@ -432,62 +426,6 @@ func (c *cmd) Before(ctx *cli.Context) error {
 	// If flags are set then use them otherwise do nothing
 	var serverOpts []server.Option
 	var clientOpts []client.Option
-	// --- Profile Grouping Extension ---
-
-	profileName := ctx.String("profile")
-	if profileName == "" {
-		profileName = os.Getenv("MICRO_PROFILE")
-	}
-	if profileName != "" {
-		switch profileName {
-		case "local":
-			imported, ierr := mprofile.LocalProfile()
-			if ierr != nil {
-				return fmt.Errorf("failed to load local profile: %v", ierr)
-			}
-			*c.opts.Registry = imported.Registry
-			registry.DefaultRegistry = imported.Registry
-			*c.opts.Broker = imported.Broker
-			broker.DefaultBroker = imported.Broker
-			*c.opts.Store = imported.Store
-			store.DefaultStore = imported.Store
-			*c.opts.Transport = imported.Transport
-			transport.DefaultTransport = imported.Transport
-		case "nats":
-			imported, ierr := mprofile.NatsProfile()
-			if ierr != nil {
-				return fmt.Errorf("failed to load nats profile: %v", ierr)
-			}
-			// Set the registry
-			sopts, clopts := c.setRegistry(imported.Registry)
-			serverOpts = append(serverOpts, sopts...)
-			clientOpts = append(clientOpts, clopts...)
-
-			// set the store
-			sopts, clopts = c.setStore(imported.Store)
-			serverOpts = append(serverOpts, sopts...)
-			clientOpts = append(clientOpts, clopts...)
-
-			// set the transport
-			sopts, clopts = c.setTransport(imported.Transport)
-			serverOpts = append(serverOpts, sopts...)
-			clientOpts = append(clientOpts, clopts...)
-
-			// Set the broker
-			sopts, clopts = c.setBroker(imported.Broker)
-			serverOpts = append(serverOpts, sopts...)
-			clientOpts = append(clientOpts, clopts...)
-
-			// Set the stream
-			sopts, clopts = c.setStream(imported.Stream)
-			serverOpts = append(serverOpts, sopts...)
-			clientOpts = append(clientOpts, clopts...)
-
-		// Add more profiles as needed
-		default:
-			return fmt.Errorf("unsupported profile: %s", profileName)
-		}
-	}
 	// Set the client
 	if name := ctx.String("client"); len(name) > 0 {
 		// only change if we have the client and type differs
