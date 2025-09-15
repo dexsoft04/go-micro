@@ -13,6 +13,7 @@ import (
 	log "go-micro.dev/v5/logger"
 	"go-micro.dev/v5/registry"
 	signalutil "go-micro.dev/v5/util/signal"
+	"go-micro.dev/v5/util/tool"
 )
 
 // Server is a simple micro server abstraction.
@@ -138,7 +139,7 @@ type Option func(*Options)
 
 var (
 	DefaultAddress                 = ":0"
-	DefaultName                    = "go.micro.server"
+	DefaultName                    = tool.GetServiceName()
 	DefaultVersion                 = "latest"
 	DefaultId                      = uuid.New().String()
 	DefaultServer           Server = NewRPCServer()
