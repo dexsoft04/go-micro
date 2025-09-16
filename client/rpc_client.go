@@ -104,8 +104,8 @@ func (r *rpcClient) call(
 	logger := r.Options().Logger
 
 	// Log call initiation
-	log.Debugf("call: initiated HTTP call to service=%s endpoint=%s node=%s address=%s",
-		req.Service(), req.Endpoint(), node.Id, address)
+	log.Debugf("call: [%s.%s] initiated HTTP call to service=%s endpoint=%s node=%s address=%s",
+		req.Service(), req.Method(), req.Service(), req.Endpoint(), node.Id, address)
 
 	msg := &transport.Message{
 		Header: make(map[string]string),
@@ -142,7 +142,8 @@ func (r *rpcClient) call(
 	msg.Header["Accept"] = req.ContentType()
 
 	// Log Content-Type processing for HTTP call
-	log.Debugf("call: HTTP request Content-Type=%s Accept=%s", req.ContentType(), req.ContentType())
+	log.Debugf("call: [%s.%s] HTTP request Content-Type=%s Accept=%s",
+		req.Service(), req.Method(), req.ContentType(), req.ContentType())
 
 	// setup old protocol
 	reqCodec := setupProtocol(msg, node)
@@ -244,17 +245,21 @@ func (r *rpcClient) call(
 
 	var grr error
 
-	log.Debugf("grpcCall: entering select statement with cTimeout=%v", cTimeout)
+	log.Debugf("call: [%s.%s] entering select statement with cTimeout=%v (ConnectionTimeout)",
+		req.Service(), req.Method(), cTimeout)
 	select {
 	case err := <-ch:
-		log.Debugf("grpcCall: goroutine completed with err=%v", err)
+		log.Debugf("call: [%s.%s] goroutine completed with err=%v",
+			req.Service(), req.Method(), err)
 		return err
 	case <-time.After(cTimeout):
-		log.Debugf("grpcCall: timeout after %v, ctx.Err()=%v", cTimeout, ctx.Err())
-		grr = merrors.Timeout("go.micro.client", fmt.Sprintf("%v", ctx.Err()))
+		log.Debugf("call: [%s.%s] request timeout after %v (ConnectionTimeout), ctx.Err()=%v",
+			req.Service(), req.Method(), cTimeout, ctx.Err())
+		grr = merrors.Timeout("go.micro.client", fmt.Sprintf("request timeout after %v: %v", cTimeout, ctx.Err()))
 	case <-ctx.Done():
-		log.Debugf("grpcCall: context canceled/deadline exceeded: %v", ctx.Err())
-		grr = ctx.Err()
+		log.Debugf("call: [%s.%s] context canceled/deadline exceeded: %v",
+			req.Service(), req.Method(), ctx.Err())
+		grr = merrors.Timeout("go.micro.client", fmt.Sprintf("context canceled: %v", ctx.Err()))
 	}
 
 	// set the stream error
@@ -280,20 +285,24 @@ func (r *rpcClient) grpcCall(
 	logger := r.Options().Logger
 
 	// Log gRPC call initiation
-	log.Debugf("grpcCall: initiated gRPC call to service=%s endpoint=%s node=%s address=%s",
-		req.Service(), req.Endpoint(), node.Id, address)
+	log.Debugf("grpcCall: [%s.%s] initiated gRPC call to service=%s endpoint=%s node=%s address=%s",
+		req.Service(), req.Method(), req.Service(), req.Endpoint(), node.Id, address)
 
 	// Add detailed context and timeout debugging
 	deadline, hasDeadline := ctx.Deadline()
-	log.Debugf("grpcCall: context debugging - hasDeadline=%v", hasDeadline)
+	log.Debugf("grpcCall: [%s.%s] context debugging - hasDeadline=%v",
+		req.Service(), req.Method(), hasDeadline)
 	if hasDeadline {
 		timeRemaining := time.Until(deadline)
-		log.Debugf("grpcCall: context deadline=%v remaining=%v", deadline, timeRemaining)
+		log.Debugf("grpcCall: [%s.%s] context deadline=%v remaining=%v",
+			req.Service(), req.Method(), deadline, timeRemaining)
 		if timeRemaining <= 0 {
-			log.Debugf("grpcCall: WARNING - context deadline already passed!")
+			log.Debugf("grpcCall: [%s.%s] WARNING - context deadline already passed!",
+				req.Service(), req.Method())
 		}
 	}
-	log.Debugf("grpcCall: ConnectionTimeout=%v RequestTimeout=%v", opts.ConnectionTimeout, opts.RequestTimeout)
+	log.Debugf("grpcCall: [%s.%s] ConnectionTimeout=%v RequestTimeout=%v (using RequestTimeout for call timeout)",
+		req.Service(), req.Method(), opts.ConnectionTimeout, opts.RequestTimeout)
 
 	msg := &transport.Message{
 		Header: make(map[string]string),
@@ -313,13 +322,18 @@ func (r *rpcClient) grpcCall(
 		}
 	}
 
-	// Set connection timeout for single requests to the server. Should be > 0
-	// as otherwise requests can't be made.
-	cTimeout := opts.ConnectionTimeout
+	// Use RequestTimeout for the entire gRPC call operation, not just connection
+	// ConnectionTimeout should only be used for establishing the connection
+	cTimeout := opts.RequestTimeout
 	if cTimeout == 0 {
-		logger.Log(log.DebugLevel, "connection timeout was set to 0, overridng to default connection timeout")
+		logger.Log(log.DebugLevel, "request timeout was set to 0, using default request timeout")
+		cTimeout = DefaultRequestTimeout
+	}
 
-		cTimeout = DefaultConnectionTimeout
+	// Connection timeout for establishing connection (keep separate)
+	connTimeout := opts.ConnectionTimeout
+	if connTimeout == 0 {
+		connTimeout = DefaultConnectionTimeout
 	}
 
 	// set timeout in nanoseconds
@@ -330,7 +344,8 @@ func (r *rpcClient) grpcCall(
 	msg.Header["Accept"] = req.ContentType()
 
 	// Log Content-Type processing for gRPC call
-	log.Debugf("grpcCall: gRPC request Content-Type=%s Accept=%s", req.ContentType(), req.ContentType())
+	log.Debugf("grpcCall: [%s.%s] gRPC request Content-Type=%s Accept=%s",
+		req.Service(), req.Method(), req.ContentType(), req.ContentType())
 
 	// setup old protocol
 	reqCodec := setupProtocol(msg, node)
@@ -433,17 +448,21 @@ func (r *rpcClient) grpcCall(
 
 	var grr error
 
-	log.Debugf("grpcCall: entering select statement with cTimeout=%v", cTimeout)
+	log.Debugf("grpcCall: [%s.%s] entering select statement with cTimeout=%v (RequestTimeout)",
+		req.Service(), req.Method(), cTimeout)
 	select {
 	case err := <-ch:
-		log.Debugf("grpcCall: goroutine completed with err=%v", err)
+		log.Debugf("grpcCall: [%s.%s] goroutine completed with err=%v",
+			req.Service(), req.Method(), err)
 		return err
 	case <-time.After(cTimeout):
-		log.Debugf("grpcCall: timeout after %v, ctx.Err()=%v", cTimeout, ctx.Err())
-		grr = merrors.Timeout("go.micro.client", fmt.Sprintf("%v", ctx.Err()))
+		log.Debugf("grpcCall: [%s.%s] request timeout after %v (RequestTimeout), ctx.Err()=%v",
+			req.Service(), req.Method(), cTimeout, ctx.Err())
+		grr = merrors.Timeout("go.micro.client", fmt.Sprintf("request timeout after %v: %v", cTimeout, ctx.Err()))
 	case <-ctx.Done():
-		log.Debugf("grpcCall: context canceled/deadline exceeded: %v", ctx.Err())
-		grr = ctx.Err()
+		log.Debugf("grpcCall: [%s.%s] context canceled/deadline exceeded: %v",
+			req.Service(), req.Method(), ctx.Err())
+		grr = merrors.Timeout("go.micro.client", fmt.Sprintf("context canceled: %v", ctx.Err()))
 	}
 
 	// set the stream error
@@ -820,11 +839,14 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 		opt(&callOpts)
 	}
 
-	// should we noop right here?
+	// check if context is already canceled, but allow the call to proceed if it's just approaching deadline
 	select {
 	case <-ctx.Done():
-		return merrors.Timeout("go.micro.client", fmt.Sprintf("%v", ctx.Err()))
+		log.Debugf("Call: [%s.%s] context already canceled before RPC call: %v",
+			request.Service(), request.Method(), ctx.Err())
+		return merrors.Timeout("go.micro.client", fmt.Sprintf("context canceled before call: %v", ctx.Err()))
 	default:
+		// Context is still active, proceed with the call
 	}
 
 	proxyCall := func(
@@ -853,27 +875,31 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 			}
 		}
 
-		log.Debugf("proxyCall: service=%s node=%s transport=%s source=%s",
-			req.Service(), node.Id, ts, source)
+		log.Debugf("proxyCall: [%s.%s] service=%s node=%s transport=%s source=%s",
+			req.Service(), req.Method(), req.Service(), node.Id, ts, source)
 
 		// if ts != "http" {
 		err = r.grpcCall(ctx, node, req, resp, opts)
 		if ts == "" && err != nil {
-			log.Debugf("proxyCall: gRPC call failed, switching to HTTP for %s: %v", req.Service(), err)
+			log.Debugf("proxyCall: [%s.%s] gRPC call failed, switching to HTTP for %s: %v",
+				req.Service(), req.Method(), req.Service(), err)
 			for k, v := range node.Metadata {
-				log.Debugf("=== Call node.Metadata %s %s %s", req.Service(), k, v)
+				log.Debugf("=== Call node.Metadata [%s.%s] %s %s %s",
+					req.Service(), req.Method(), req.Service(), k, v)
 			}
 			err = r.call(ctx, node, req, resp, opts)
 			if err != nil {
-				log.Debugf("proxyCall: HTTP fallback failed for %s: %v", req.Service(), err)
+				log.Debugf("proxyCall: [%s.%s] HTTP fallback failed for %s: %v",
+					req.Service(), req.Method(), req.Service(), err)
 				return err
 			}
 			ts = "http"
-			log.Infof("proxyCall: auto-detected HTTP transport for %s node=%s", req.Service(), node.Id)
+			log.Infof("proxyCall: [%s.%s] auto-detected HTTP transport for %s node=%s",
+				req.Service(), req.Method(), req.Service(), node.Id)
 			r.transportCache.Store(node.Id, ts)
 		} else if err != nil {
-			log.Errorf("proxyCall: gRPC call error service=%s endpoint=%s node=%s addr=%s err=%v",
-				req.Service(), req.Endpoint(), node.Id, node.Address, err)
+			log.Errorf("proxyCall: [%s.%s] gRPC call error service=%s endpoint=%s node=%s addr=%s err=%v",
+				req.Service(), req.Method(), req.Service(), req.Endpoint(), node.Id, node.Address, err)
 		}
 		// } else {
 		// 	err = r.call(ctx, node, req, resp, opts)
