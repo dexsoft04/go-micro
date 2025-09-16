@@ -257,16 +257,17 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 		// Create new context with the metadata
 		ctx := metadata.NewContext(context.Background(), header)
 
+		// Declare cancel function for goroutine use
+		var cancel context.CancelFunc
+
 		// Set the timeout from the header if we have it
 		if len(to) > 0 {
 			if n, err := strconv.ParseUint(to, 10, 64); err == nil {
-				var cancel context.CancelFunc
-
 				timeoutDuration := time.Duration(n)
 				logger.Logf(log.DebugLevel, "SERVER: Setting timeout from header: to=%s, parsed=%d, duration=%v", to, n, timeoutDuration)
 
 				ctx, cancel = context.WithTimeout(ctx, timeoutDuration)
-				defer cancel()
+				// Don't defer cancel() here - pass it to goroutine instead
 
 				// Check if timeout is already expired
 				deadline, _ := ctx.Deadline()
@@ -370,11 +371,15 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 		}(psock)
 
 		// Serve the request in a go routine as this may be a stream
-		go func(psock *socket.Socket) {
+		go func(psock *socket.Socket, cancelFunc context.CancelFunc) {
+			// Handle cancel function in goroutine to avoid premature cancellation
+			if cancelFunc != nil {
+				defer cancelFunc()
+			}
 			defer s.deferer(pool, psock, wg)
 
 			s.serveReq(ctx, msg, &request, &response, rcodec)
-		}(psock)
+		}(psock, cancel)
 	}
 }
 

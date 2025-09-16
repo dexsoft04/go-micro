@@ -20,7 +20,7 @@ var (
 	// DefaultRetries is the default number of times a request is tried.
 	DefaultRetries = 5
 	// DefaultRequestTimeout is the default request timeout.
-	DefaultRequestTimeout = time.Second * 30
+	DefaultRequestTimeout = time.Second * 5
 	// DefaultConnectionTimeout is the default connection timeout.
 	DefaultConnectionTimeout = time.Second * 5
 	// DefaultPoolSize sets the connection pool size.
