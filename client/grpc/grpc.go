@@ -16,6 +16,7 @@ import (
 	"go-micro.dev/v5/cmd"
 	raw "go-micro.dev/v5/codec/bytes"
 	"go-micro.dev/v5/errors"
+	"go-micro.dev/v5/logger"
 	"go-micro.dev/v5/metadata"
 	"go-micro.dev/v5/registry"
 	"go-micro.dev/v5/selector"
@@ -175,8 +176,14 @@ func (g *grpcClient) call(ctx context.Context, node *registry.Node, req client.R
 
 	select {
 	case err := <-ch:
+		if err != nil {
+			logger.Debugf("gRPC call completed with error: %v", err)
+		} else {
+			logger.Debugf("gRPC call completed successfully")
+		}
 		grr = err
 	case <-ctx.Done():
+		logger.Debugf("gRPC call timed out: %v", ctx.Err())
 		grr = errors.Timeout("go.micro.client", "%v", ctx.Err())
 	}
 
@@ -412,23 +419,45 @@ func (g *grpcClient) Call(ctx context.Context, req client.Request, rsp interface
 
 	// check if we already have a deadline
 	d, ok := ctx.Deadline()
+	logger.Debugf("=== gRPC Call Context Debug ===")
+	logger.Debugf("Service: %s, Endpoint: %s", req.Service(), req.Endpoint())
+	logger.Debugf("Original context has deadline: %v", ok)
+	if ok {
+		logger.Debugf("Original deadline: %v (in %v)", d, time.Until(d))
+	}
+	logger.Debugf("Default RequestTimeout: %v", callOpts.RequestTimeout)
+
 	if !ok {
 		// no deadline so we create a new one
+		logger.Debugf("Creating new context with timeout: %v", callOpts.RequestTimeout)
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, callOpts.RequestTimeout)
 		defer cancel()
+
+		newDeadline, _ := ctx.Deadline()
+		logger.Debugf("New context deadline: %v (in %v)", newDeadline, time.Until(newDeadline))
 	} else {
 		// got a deadline so no need to setup context
 		// but we need to set the timeout we pass along
-		opt := client.WithRequestTimeout(time.Until(d))
+		timeRemaining := time.Until(d)
+		logger.Debugf("Using existing deadline, time remaining: %v", timeRemaining)
+
+		if timeRemaining <= 0 {
+			logger.Debugf("WARNING: Context deadline already passed!")
+		}
+
+		opt := client.WithRequestTimeout(timeRemaining)
 		opt(&callOpts)
+		logger.Debugf("Updated callOpts.RequestTimeout to: %v", callOpts.RequestTimeout)
 	}
 
 	// should we noop right here?
 	select {
 	case <-ctx.Done():
+		logger.Debugf("Context already done before call starts: %v", ctx.Err())
 		return errors.New("go.micro.client", fmt.Sprintf("%v", ctx.Err()), 408)
 	default:
+		logger.Debugf("Context is not done, proceeding with call")
 	}
 
 	// make copy of call method
@@ -475,29 +504,44 @@ func (g *grpcClient) Call(ctx context.Context, req client.Request, rsp interface
 	ch := make(chan error, callOpts.Retries+1)
 	var gerr error
 
+	logger.Debugf("Starting retry loop with %d retries", callOpts.Retries)
+
 	for i := 0; i <= callOpts.Retries; i++ {
+		logger.Debugf("Starting call attempt %d/%d", i+1, callOpts.Retries+1)
+		deadline, hasDeadline := ctx.Deadline()
+		if hasDeadline {
+			logger.Debugf("Call attempt %d context deadline: %v (remaining: %v)", i+1, deadline, time.Until(deadline))
+		}
+
 		go func(i int) {
 			ch <- call(i)
 		}(i)
 
 		select {
 		case <-ctx.Done():
+			logger.Debugf("Context timeout in retry loop at attempt %d: %v", i+1, ctx.Err())
 			return errors.New("go.micro.client", fmt.Sprintf("%v", ctx.Err()), 408)
 		case err := <-ch:
 			// if the call succeeded lets bail early
 			if err == nil {
+				logger.Debugf("Call attempt %d succeeded", i+1)
 				return nil
 			}
 
+			logger.Debugf("Call attempt %d failed with error: %v", i+1, err)
+
 			retry, rerr := callOpts.Retry(ctx, req, i, err)
 			if rerr != nil {
+				logger.Debugf("Retry function returned error: %v", rerr)
 				return rerr
 			}
 
 			if !retry {
+				logger.Debugf("No retry for attempt %d, returning error: %v", i+1, err)
 				return err
 			}
 
+			logger.Debugf("Will retry after attempt %d, error: %v", i+1, err)
 			gerr = err
 		}
 	}
