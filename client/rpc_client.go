@@ -244,11 +244,17 @@ func (r *rpcClient) call(
 
 	var grr error
 
+	log.Debugf("grpcCall: entering select statement with cTimeout=%v", cTimeout)
 	select {
 	case err := <-ch:
+		log.Debugf("grpcCall: goroutine completed with err=%v", err)
 		return err
 	case <-time.After(cTimeout):
+		log.Debugf("grpcCall: timeout after %v, ctx.Err()=%v", cTimeout, ctx.Err())
 		grr = merrors.Timeout("go.micro.client", fmt.Sprintf("%v", ctx.Err()))
+	case <-ctx.Done():
+		log.Debugf("grpcCall: context canceled/deadline exceeded: %v", ctx.Err())
+		grr = ctx.Err()
 	}
 
 	// set the stream error
@@ -276,6 +282,18 @@ func (r *rpcClient) grpcCall(
 	// Log gRPC call initiation
 	log.Debugf("grpcCall: initiated gRPC call to service=%s endpoint=%s node=%s address=%s",
 		req.Service(), req.Endpoint(), node.Id, address)
+
+	// Add detailed context and timeout debugging
+	deadline, hasDeadline := ctx.Deadline()
+	log.Debugf("grpcCall: context debugging - hasDeadline=%v", hasDeadline)
+	if hasDeadline {
+		timeRemaining := time.Until(deadline)
+		log.Debugf("grpcCall: context deadline=%v remaining=%v", deadline, timeRemaining)
+		if timeRemaining <= 0 {
+			log.Debugf("grpcCall: WARNING - context deadline already passed!")
+		}
+	}
+	log.Debugf("grpcCall: ConnectionTimeout=%v RequestTimeout=%v", opts.ConnectionTimeout, opts.RequestTimeout)
 
 	msg := &transport.Message{
 		Header: make(map[string]string),
@@ -415,11 +433,17 @@ func (r *rpcClient) grpcCall(
 
 	var grr error
 
+	log.Debugf("grpcCall: entering select statement with cTimeout=%v", cTimeout)
 	select {
 	case err := <-ch:
+		log.Debugf("grpcCall: goroutine completed with err=%v", err)
 		return err
 	case <-time.After(cTimeout):
+		log.Debugf("grpcCall: timeout after %v, ctx.Err()=%v", cTimeout, ctx.Err())
 		grr = merrors.Timeout("go.micro.client", fmt.Sprintf("%v", ctx.Err()))
+	case <-ctx.Done():
+		log.Debugf("grpcCall: context canceled/deadline exceeded: %v", ctx.Err())
+		grr = ctx.Err()
 	}
 
 	// set the stream error
