@@ -750,9 +750,34 @@ func (c *cmd) Before(ctx *cli.Context) error {
 
 	// Use an init option?
 	if len(clientOpts) > 0 {
+		logger.Debugf("=== Applying Client Options ===")
+		logger.Debugf("About to apply %d client options", len(clientOpts))
+		logger.Debugf("Current client before Init: %s", (*c.opts.Client).String())
+
+		// Check current client's transport before applying options
+		currentClientTransport := (*c.opts.Client).Options().Transport
+		if currentClientTransport != nil {
+			logger.Debugf("Client's current internal transport before Init: %s", currentClientTransport.String())
+		} else {
+			logger.Debugf("Client's current internal transport before Init: <nil>")
+		}
+
 		if err := (*c.opts.Client).Init(clientOpts...); err != nil {
 			logger.Fatalf("Error configuring client: %v", err)
 		}
+
+		// Verify client transport after applying options
+		logger.Debugf("Client after Init: %s", (*c.opts.Client).String())
+		afterClientTransport := (*c.opts.Client).Options().Transport
+		if afterClientTransport != nil {
+			logger.Debugf("Client's internal transport after Init: %s", afterClientTransport.String())
+		} else {
+			logger.Debugf("Client's internal transport after Init: <nil>")
+		}
+
+		// Update global DefaultClient
+		client.DefaultClient = *c.opts.Client
+		logger.Debugf("Updated client.DefaultClient to: %s", client.DefaultClient.String())
 	}
 
 	// config
@@ -775,6 +800,23 @@ func (c *cmd) Before(ctx *cli.Context) error {
 	)
 	if err != nil {
 		logger.Fatalf("Error initializing core server wrappers: %v", err)
+	}
+
+	// Final configuration status logging
+	logger.Debugf("=== Final Configuration Status ===")
+	logger.Debugf("DefaultTransport: %s", transport.DefaultTransport.String())
+	logger.Debugf("DefaultClient type: %s", client.DefaultClient.String())
+	logger.Debugf("DefaultServer type: %s", server.DefaultServer.String())
+	logger.Debugf("c.opts.Transport: %s", (*c.opts.Transport).String())
+	logger.Debugf("c.opts.Client: %s", (*c.opts.Client).String())
+	logger.Debugf("c.opts.Server: %s", (*c.opts.Server).String())
+
+	// Check client transport options
+	clientTransport := (*c.opts.Client).Options().Transport
+	if clientTransport != nil {
+		logger.Debugf("Client's internal transport: %s", clientTransport.String())
+	} else {
+		logger.Debugf("Client's internal transport: <nil>")
 	}
 
 	return nil
@@ -845,8 +887,12 @@ func (c *cmd) setTransport(t transport.Transport) ([]server.Option, []client.Opt
 	// Create server and client options
 	serverOpts = append(serverOpts, server.Transport(*c.opts.Transport))
 	clientOpts = append(clientOpts, client.Transport(*c.opts.Transport))
-	logger.Debugf("Created server transport option")
-	logger.Debugf("Created client transport option")
+	logger.Debugf("Created server transport option for: %s", (*c.opts.Transport).String())
+	logger.Debugf("Created client transport option for: %s", (*c.opts.Transport).String())
+
+	// Debug client option details
+	logger.Debugf("client.Transport option points to: %s", (*c.opts.Transport).String())
+	logger.Debugf("This should replace client's internal transport")
 
 	// Update the global default transport
 	transport.DefaultTransport = *c.opts.Transport
