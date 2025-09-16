@@ -31,7 +31,6 @@ const (
 	packageID = "go.micro.client"
 )
 
-
 type rpcClient struct {
 	opts     Options
 	once     atomic.Value
@@ -54,21 +53,21 @@ func newRPCClient(opt ...Option) Client {
 		pool.Transport(opts.Transport),
 		pool.CloseTimeout(opts.PoolCloseTimeout),
 	)
-	
+
 	// Create rpcClient with proper initialization
 	rc := &rpcClient{
-		opts:     opts,
-		pool:     p,
-		seq:      0,
+		opts: opts,
+		pool: p,
+		seq:  0,
 	}
-	
+
 	gp := pool.NewPool(
 		pool.Size(opts.PoolSize),
 		pool.TTL(opts.PoolTTL),
 		pool.Transport(transport.DefaultGrpcTransport),
 		pool.CloseTimeout(opts.PoolCloseTimeout),
 	)
-	
+
 	rc.grpcPool = gp
 	rc.once.Store(false)
 
@@ -103,9 +102,9 @@ func (r *rpcClient) call(
 ) error {
 	address := node.Address
 	logger := r.Options().Logger
-	
+
 	// Log call initiation
-	log.Debugf("call: initiated HTTP call to service=%s endpoint=%s node=%s address=%s", 
+	log.Debugf("call: initiated HTTP call to service=%s endpoint=%s node=%s address=%s",
 		req.Service(), req.Endpoint(), node.Id, address)
 
 	msg := &transport.Message{
@@ -141,7 +140,7 @@ func (r *rpcClient) call(
 	msg.Header["Content-Type"] = req.ContentType()
 	// set the accept header
 	msg.Header["Accept"] = req.ContentType()
-	
+
 	// Log Content-Type processing for HTTP call
 	log.Debugf("call: HTTP request Content-Type=%s Accept=%s", req.ContentType(), req.ContentType())
 
@@ -273,9 +272,9 @@ func (r *rpcClient) grpcCall(
 ) error {
 	address := node.Address
 	logger := r.Options().Logger
-	
+
 	// Log gRPC call initiation
-	log.Debugf("grpcCall: initiated gRPC call to service=%s endpoint=%s node=%s address=%s", 
+	log.Debugf("grpcCall: initiated gRPC call to service=%s endpoint=%s node=%s address=%s",
 		req.Service(), req.Endpoint(), node.Id, address)
 
 	msg := &transport.Message{
@@ -311,7 +310,7 @@ func (r *rpcClient) grpcCall(
 	msg.Header["Content-Type"] = req.ContentType()
 	// set the accept header
 	msg.Header["Accept"] = req.ContentType()
-	
+
 	// Log Content-Type processing for gRPC call
 	log.Debugf("grpcCall: gRPC request Content-Type=%s Accept=%s", req.ContentType(), req.ContentType())
 
@@ -689,7 +688,7 @@ func (r *rpcClient) Init(opts ...Option) error {
 			pool.Transport(r.opts.Transport),
 		)
 	}
-	
+
 	// update grpc pool configuration if gRPC transport changed
 	if grpcTr != r.opts.GrpcTransport {
 		if r.grpcPool != nil {
@@ -697,7 +696,7 @@ func (r *rpcClient) Init(opts ...Option) error {
 				return errors.Wrap(err, "failed to close grpc pool")
 			}
 		}
-		
+
 		// Determine which transport to use for gRPC pool
 		var grpcTransport transport.Transport
 		if r.opts.GrpcTransport != nil {
@@ -705,7 +704,7 @@ func (r *rpcClient) Init(opts ...Option) error {
 		} else {
 			grpcTransport = r.opts.Transport
 		}
-		
+
 		// create new gRPC pool
 		r.grpcPool = pool.NewPool(
 			pool.Size(r.opts.PoolSize),
@@ -713,7 +712,7 @@ func (r *rpcClient) Init(opts ...Option) error {
 			pool.Transport(grpcTransport),
 			pool.CloseTimeout(r.opts.PoolCloseTimeout),
 		)
-		
+
 		log.Debugf("Init: recreated gRPC pool with transport: %s", grpcTransport.String())
 	}
 	return nil
@@ -829,41 +828,36 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 				}
 			}
 		}
-		
-		log.Debugf("proxyCall: service=%s node=%s transport=%s source=%s", 
+
+		log.Debugf("proxyCall: service=%s node=%s transport=%s source=%s",
 			req.Service(), node.Id, ts, source)
-		
-		// Log node metadata for debugging
-		for k, v := range node.Metadata {
-			log.Debugf("proxyCall: node.Metadata %s=%s", k, v)
-		}
-		
-		if ts == "grpc" {
-			log.Debugf("proxyCall: using gRPC transport for %s", req.Service())
-			return r.grpcCall(ctx, node, req, resp, opts)
-		}
-		
-		log.Debugf("proxyCall: using HTTP transport for %s", req.Service())
-		err = r.call(ctx, node, req, resp, opts)
+
+		// if ts != "http" {
+		err = r.grpcCall(ctx, node, req, resp, opts)
 		if ts == "" && err != nil {
-			if ve, ok := err.(*merrors.Error); ok && nil != ve && ve.Code == 500 && strings.Contains(ve.Detail, "malformed HTTP") {
-				log.Debugf("proxyCall: detected malformed HTTP response, switching to gRPC for %s", req.Service())
-				for k, v := range node.Metadata {
-					log.Debugf("=== Call node.Metadata %s %s %s", req.Service(), k, v)
-				}
-				err = r.grpcCall(ctx, node, req, resp, opts)
-				if err != nil {
-					log.Debugf("proxyCall: gRPC fallback failed for %s: %v", req.Service(), err)
-					return err
-				}
-				ts = "grpc"
-				log.Infof("proxyCall: auto-detected gRPC transport for %s node=%s", req.Service(), node.Id)
-				r.transportCache.Store(node.Id, ts)
-			} else {
-				log.Debugf("proxyCall: call error service=%s endpoint=%s node=%s addr=%s err=%v", 
-					req.Service(), req.Endpoint(), node.Id, node.Address, err)
+			log.Debugf("proxyCall: gRPC call failed, switching to HTTP for %s: %v", req.Service(), err)
+			for k, v := range node.Metadata {
+				log.Debugf("=== Call node.Metadata %s %s %s", req.Service(), k, v)
 			}
+			err = r.call(ctx, node, req, resp, opts)
+			if err != nil {
+				log.Debugf("proxyCall: HTTP fallback failed for %s: %v", req.Service(), err)
+				return err
+			}
+			ts = "http"
+			log.Infof("proxyCall: auto-detected HTTP transport for %s node=%s", req.Service(), node.Id)
+			r.transportCache.Store(node.Id, ts)
+		} else if err != nil {
+			log.Errorf("proxyCall: gRPC call error service=%s endpoint=%s node=%s addr=%s err=%v",
+				req.Service(), req.Endpoint(), node.Id, node.Address, err)
 		}
+		// } else {
+		// 	err = r.call(ctx, node, req, resp, opts)
+		// 	if err != nil {
+		// 		log.Errorf("proxyCall: HTTP call error service=%s endpoint=%s node=%s addr=%s err=%v",
+		// 			req.Service(), req.Endpoint(), node.Id, node.Address, err)
+		// 	}
+		// }
 		return err
 	}
 

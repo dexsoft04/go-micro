@@ -319,6 +319,9 @@ var (
 	DefaultServers = map[string]func(...server.Option) server.Server{}
 
 	DefaultTransports = map[string]func(...transport.Option) transport.Transport{
+		"http": func(opts ...transport.Option) transport.Transport {
+			return transport.NewHTTPTransport(opts...)
+		},
 		"nats": ntransport.NewTransport,
 	}
 
@@ -421,6 +424,23 @@ func (c *cmd) Options() Options {
 }
 
 func (c *cmd) Before(ctx *cli.Context) error {
+	// Add diagnostic logging for transport configuration
+	logger.Debugf("=== Transport Configuration Debug ===")
+	logger.Debugf("MICRO_TRANSPORT env var: '%s'", os.Getenv("MICRO_TRANSPORT"))
+	logger.Debugf("ctx.String(transport): '%s'", ctx.String("transport"))
+	logger.Debugf("Current DefaultTransport: %s", transport.DefaultTransport.String())
+	logger.Debugf("Current c.opts.Transport: %s", (*c.opts.Transport).String())
+
+	// Print available transports
+	logger.Debugf("Available transports in DefaultTransports:")
+	for name := range DefaultTransports {
+		logger.Debugf("  - %s", name)
+	}
+	logger.Debugf("Available transports in c.opts.Transports:")
+	for name := range c.opts.Transports {
+		logger.Debugf("  - %s", name)
+	}
+
 	// Set GenAI provider from flags/env
 	setGenAIFromFlags(ctx)
 	// If flags are set then use them otherwise do nothing
@@ -542,15 +562,38 @@ func (c *cmd) Before(ctx *cli.Context) error {
 
 	// Set the transport
 	if name := ctx.String("transport"); len(name) > 0 && (*c.opts.Transport).String() != name {
+		logger.Debugf("=== Transport Configuration ===")
+		logger.Debugf("Requested transport: '%s'", name)
+		logger.Debugf("Current transport: '%s'", (*c.opts.Transport).String())
+		logger.Debugf("Transport condition check: len(name)>0=%v, String()!=name=%v", len(name) > 0, (*c.opts.Transport).String() != name)
+
 		t, ok := c.opts.Transports[name]
 		if !ok {
+			logger.Debugf("Transport '%s' not found in c.opts.Transports", name)
+			logger.Debugf("Available transports in c.opts.Transports:")
+			for availName := range c.opts.Transports {
+				logger.Debugf("  - %s", availName)
+			}
 			return fmt.Errorf("Transport %s not found", name)
 		}
 
-		sopts, clopts := c.setTransport(t())
+		logger.Debugf("Found transport '%s', creating instance", name)
+		transportInstance := t()
+		logger.Debugf("Created transport instance: %s", transportInstance.String())
+
+		logger.Debugf("Calling setTransport...")
+		sopts, clopts := c.setTransport(transportInstance)
+		logger.Debugf("setTransport returned %d server options and %d client options", len(sopts), len(clopts))
+
 		serverOpts = append(serverOpts, sopts...)
 		clientOpts = append(clientOpts, clopts...)
 
+		logger.Debugf("Transport configuration completed. Current transport: %s", (*c.opts.Transport).String())
+		logger.Debugf("Default transport after config: %s", transport.DefaultTransport.String())
+
+	} else {
+		logger.Debugf("Transport configuration skipped: name='%s', len(name)>0=%v, String()!=name=%v",
+			ctx.String("transport"), len(ctx.String("transport")) > 0, (*c.opts.Transport).String() != ctx.String("transport"))
 	}
 
 	// Initialize DefaultGrpcTransport for backward compatibility
@@ -787,13 +830,29 @@ func (c *cmd) setStore(s store.Store) ([]server.Option, []client.Option) {
 }
 
 func (c *cmd) setTransport(t transport.Transport) ([]server.Option, []client.Option) {
+	logger.Debugf("=== setTransport Method ===")
+	logger.Debugf("Received transport instance: %s", t.String())
+	logger.Debugf("Current c.opts.Transport before update: %s", (*c.opts.Transport).String())
+	logger.Debugf("Current DefaultTransport before update: %s", transport.DefaultTransport.String())
+
 	var serverOpts []server.Option
 	var clientOpts []client.Option
+
+	// Update the cmd options transport
 	*c.opts.Transport = t
+	logger.Debugf("Updated c.opts.Transport to: %s", (*c.opts.Transport).String())
+
+	// Create server and client options
 	serverOpts = append(serverOpts, server.Transport(*c.opts.Transport))
 	clientOpts = append(clientOpts, client.Transport(*c.opts.Transport))
+	logger.Debugf("Created server transport option")
+	logger.Debugf("Created client transport option")
+
+	// Update the global default transport
 	transport.DefaultTransport = *c.opts.Transport
-	
+	logger.Debugf("Updated DefaultTransport to: %s", transport.DefaultTransport.String())
+
+	logger.Debugf("setTransport completed, returning %d server opts and %d client opts", len(serverOpts), len(clientOpts))
 	return serverOpts, clientOpts
 }
 
