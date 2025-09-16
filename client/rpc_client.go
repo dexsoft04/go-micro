@@ -125,17 +125,26 @@ func (r *rpcClient) call(
 		}
 	}
 
-	// Set connection timeout for single requests to the server. Should be > 0
-	// as otherwise requests can't be made.
-	cTimeout := opts.ConnectionTimeout
+	// Use RequestTimeout for the entire HTTP call operation, not just connection
+	// ConnectionTimeout should only be used for establishing the connection
+	cTimeout := opts.RequestTimeout
 	if cTimeout == 0 {
-		logger.Log(log.DebugLevel, "connection timeout was set to 0, overridng to default connection timeout")
+		logger.Log(log.DebugLevel, "request timeout was set to 0, using default request timeout")
 
-		cTimeout = DefaultConnectionTimeout
+		cTimeout = DefaultRequestTimeout
+	}
+
+	// Connection timeout for establishing connection (keep separate)
+	connTimeout := opts.ConnectionTimeout
+	if connTimeout == 0 {
+		connTimeout = DefaultConnectionTimeout
 	}
 
 	// set timeout in nanoseconds
-	msg.Header["Timeout"] = fmt.Sprintf("%d", cTimeout)
+	timeoutHeader := fmt.Sprintf("%d", cTimeout)
+	msg.Header["Timeout"] = timeoutHeader
+	log.Debugf("call: [%s.%s] CLIENT: Setting Timeout header=%s (RequestTimeout=%v)",
+		req.Service(), req.Method(), timeoutHeader, cTimeout)
 	// set the content type for the request
 	msg.Header["Content-Type"] = req.ContentType()
 	// set the accept header
@@ -337,7 +346,10 @@ func (r *rpcClient) grpcCall(
 	}
 
 	// set timeout in nanoseconds
-	msg.Header["Timeout"] = fmt.Sprintf("%d", cTimeout)
+	timeoutHeader := fmt.Sprintf("%d", cTimeout)
+	msg.Header["Timeout"] = timeoutHeader
+	log.Debugf("grpcCall: [%s.%s] CLIENT: Setting Timeout header=%s (RequestTimeout=%v)",
+		req.Service(), req.Method(), timeoutHeader, cTimeout)
 	// set the content type for the request
 	msg.Header["Content-Type"] = req.ContentType()
 	// set the accept header

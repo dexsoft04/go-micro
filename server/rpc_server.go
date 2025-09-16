@@ -262,9 +262,24 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 			if n, err := strconv.ParseUint(to, 10, 64); err == nil {
 				var cancel context.CancelFunc
 
-				ctx, cancel = context.WithTimeout(ctx, time.Duration(n))
+				timeoutDuration := time.Duration(n)
+				logger.Logf(log.DebugLevel, "SERVER: Setting timeout from header: to=%s, parsed=%d, duration=%v", to, n, timeoutDuration)
+
+				ctx, cancel = context.WithTimeout(ctx, timeoutDuration)
 				defer cancel()
+
+				// Check if timeout is already expired
+				deadline, _ := ctx.Deadline()
+				remaining := time.Until(deadline)
+				logger.Logf(log.DebugLevel, "SERVER: Context deadline set to %v, remaining=%v", deadline, remaining)
+				if remaining <= 0 {
+					logger.Logf(log.ErrorLevel, "SERVER: WARNING - timeout already expired! timeout=%s duration=%v", to, timeoutDuration)
+				}
+			} else {
+				logger.Logf(log.ErrorLevel, "SERVER: Failed to parse timeout header: to=%s, err=%v", to, err)
 			}
+		} else {
+			logger.Logf(log.DebugLevel, "SERVER: No timeout header found")
 		}
 
 		// If there's no content type default it
