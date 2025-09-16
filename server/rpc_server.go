@@ -96,9 +96,6 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 	// Global error tracking
 	var gerr error
 
-	// Keep track of Connection: close header
-	var closeConn bool
-
 	// Streams are multiplexed on Micro-Stream or Micro-Id header
 	pool := socket.NewPool()
 
@@ -110,13 +107,9 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 	defer func() {
 		// Only wait if there's no error
 		if gerr != nil {
-			select {
-			case <-s.exit:
-			default:
-				// EOF is expected if the client closes the connection
-				if !errors.Is(gerr, io.EOF) {
-					logger.Logf(log.ErrorLevel, "error while serving connection: %v", gerr)
-				}
+			// EOF is expected if the client closes the connection
+			if !errors.Is(gerr, io.EOF) {
+				logger.Logf(log.ErrorLevel, "error while serving connection: %v", gerr)
 			}
 		} else {
 			wg.Wait()
@@ -142,11 +135,6 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 			Header: make(map[string]string),
 		}
 
-		// Close connection if Connection: close header was set
-		if closeConn {
-			return
-		}
-
 		// Process inbound messages one at a time
 		if err := sock.Recv(&msg); err != nil {
 			// Set a global error and return.
@@ -155,11 +143,6 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 			gerr = errors.Wrapf(err, "%s-%s | %s", s.opts.Name, s.opts.Id, sock.Remote())
 
 			return
-		}
-
-		// Keep track of when to close the connection
-		if c := msg.Header["Connection"]; c == "close" {
-			closeConn = true
 		}
 
 		// Check the message header for micro message header, if so handle
@@ -206,7 +189,6 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 		// If we don't have a socket and its a stream
 		// Check if its a last stream EOS error
 		if !ok && stream && msg.Header[headers.Error] == errLastStreamResponse.Error() {
-			closeConn = true
 			pool.Release(psock)
 
 			continue
@@ -300,7 +282,7 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 		// Create a new rpc codec based on the pseudo socket and codec
 		rcodec := newRPCCodec(&msg, psock, cf)
 		// Check the protocol as well
-		protocol := rcodec.String()
+		// protocol removed: rcodec.String() was only used to force-close grpc socket, which we eliminated
 
 		// Internal request
 		request := rpcRequest{
@@ -329,14 +311,6 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 		// Process the outbound messages from the socket
 		go func(psock *socket.Socket) {
 			defer func() {
-				// TODO: don't hack this but if its grpc just break out of the stream
-				// We do this because the underlying connection is h2 and its a stream
-				if protocol == "grpc" {
-					if err := sock.Close(); err != nil {
-						logger.Logf(log.ErrorLevel, "Failed to close socket: %v", err)
-					}
-				}
-
 				s.deferer(pool, psock, wg)
 			}()
 

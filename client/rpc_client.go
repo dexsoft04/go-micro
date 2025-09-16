@@ -290,6 +290,10 @@ func (r *rpcClient) grpcCall(
 			if k == headers.Message {
 				continue
 			}
+			// Skip hop-by-hop headers that should not be forwarded over RPC transports
+			if strings.EqualFold(k, "Connection") || strings.EqualFold(k, "Proxy-Connection") || strings.EqualFold(k, "Keep-Alive") || strings.EqualFold(k, "Transfer-Encoding") || strings.EqualFold(k, "Upgrade") {
+				continue
+			}
 
 			msg.Header[k] = v
 		}
