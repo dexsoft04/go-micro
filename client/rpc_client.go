@@ -808,6 +808,31 @@ func (r *rpcClient) next(request Request, opts CallOptions) (selector.Next, erro
 }
 
 func (r *rpcClient) Call(ctx context.Context, request Request, response interface{}, opts ...CallOption) error {
+	// Add detailed context debugging at the very beginning of Call method
+	deadline, hasDeadline := ctx.Deadline()
+	if hasDeadline {
+		timeRemaining := time.Until(deadline)
+		log.Debugf("Call: [%s.%s] ENTRY - context has deadline=%v remaining=%v",
+			request.Service(), request.Method(), deadline, timeRemaining)
+		if timeRemaining <= 0 {
+			log.Debugf("Call: [%s.%s] ENTRY - WARNING: context deadline already passed!",
+				request.Service(), request.Method())
+		}
+	} else {
+		log.Debugf("Call: [%s.%s] ENTRY - context has no deadline",
+			request.Service(), request.Method())
+	}
+
+	// Check if context is already done at entry
+	select {
+	case <-ctx.Done():
+		log.Debugf("Call: [%s.%s] ENTRY - context is already done: %v",
+			request.Service(), request.Method(), ctx.Err())
+	default:
+		log.Debugf("Call: [%s.%s] ENTRY - context is active",
+			request.Service(), request.Method())
+	}
+
 	// TODO: further validate these mutex locks. full lock would prevent
 	// parallel calls. Maybe we can set individual locks for secctions.
 	r.mu.RLock()
@@ -828,14 +853,24 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 	d, ok := ctx.Deadline()
 	if !ok {
 		// no deadline so we create a new one
+		log.Debugf("Call: [%s.%s] TIMEOUT - no deadline, creating new timeout=%v",
+			request.Service(), request.Method(), callOpts.RequestTimeout)
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, callOpts.RequestTimeout)
 
 		defer cancel()
+
+		// Log the new deadline
+		newDeadline, _ := ctx.Deadline()
+		log.Debugf("Call: [%s.%s] TIMEOUT - new deadline set to %v",
+			request.Service(), request.Method(), newDeadline)
 	} else {
 		// got a deadline so no need to setup context
 		// but we need to set the timeout we pass along
-		opt := WithRequestTimeout(time.Until(d))
+		timeUntilDeadline := time.Until(d)
+		log.Debugf("Call: [%s.%s] TIMEOUT - existing deadline %v, time remaining=%v, setting RequestTimeout=%v",
+			request.Service(), request.Method(), d, timeUntilDeadline, timeUntilDeadline)
+		opt := WithRequestTimeout(timeUntilDeadline)
 		opt(&callOpts)
 	}
 
