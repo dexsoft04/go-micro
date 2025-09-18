@@ -836,38 +836,44 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 		log.Tracef("proxyCall: service=%s node=%s transport=%s source=%s",
 			req.Service(), node.Id, ts, source)
 
-		// if ts != "http" {
-		err = r.grpcCall(ctx, node, req, resp, opts)
-		if ts == "" && err != nil {
-			log.Debugf("proxyCall: gRPC call failed, switching to HTTP for %s: %v", req.Service(), err)
-			for k, v := range node.Metadata {
-				log.Debugf("=== Call node.Metadata %s %s %s", req.Service(), k, v)
+		switch ts {
+		case "grpc":
+			err = r.grpcCall(ctx, node, req, resp, opts)
+			if err != nil {
+				log.Debugf("proxyCall: gRPC call failed, switching to HTTP for %s: %v", req.Service(), err)
+				err = r.call(ctx, node, req, resp, opts)
 			}
+		case "http":
 			err = r.call(ctx, node, req, resp, opts)
 			if err != nil {
-				log.Debugf("proxyCall: HTTP fallback failed for %s: %v", req.Service(), err)
-				return err
+				log.Errorf("proxyCall: HTTP call error service=%s endpoint=%s node=%s addr=%s err=%v",
+					req.Service(), req.Endpoint(), node.Id, node.Address, err)
 			}
-			ts = "http"
-			log.Infof("proxyCall: auto-detected HTTP transport for %s node=%s", req.Service(), node.Id)
-			r.transportCache.Store(node.Id, ts)
-		} else if err != nil {
-			log.Errorf("proxyCall: gRPC call error service=%s endpoint=%s node=%s addr=%s err=%v",
-				req.Service(), req.Endpoint(), node.Id, node.Address, err)
+		default:
+			log.Infof("proxyCall: service=%s node=%s transport=%s source=%s", req.Service(), node.Id, ts, source)
+			err = r.grpcCall(ctx, node, req, resp, opts)
+			if ts == "" && err != nil {
+				log.Debugf("proxyCall: gRPC call failed, switching to HTTP for %s: %v", req.Service(), err)
+				for k, v := range node.Metadata {
+					log.Debugf("=== Call node.Metadata %s %s %s", req.Service(), k, v)
+				}
+				err = r.call(ctx, node, req, resp, opts)
+				if err != nil {
+					log.Debugf("proxyCall: HTTP fallback failed for %s: %v", req.Service(), err)
+					return err
+				}
+				ts = "http"
+				log.Infof("proxyCall: auto-detected HTTP transport for %s node=%s", req.Service(), node.Id)
+				r.transportCache.Store(node.Id, ts)
+			} else if err != nil {
+				log.Errorf("proxyCall: gRPC call error service=%s endpoint=%s node=%s addr=%s err=%v",
+					req.Service(), req.Endpoint(), node.Id, node.Address, err)
+			}
 		}
-		// } else {
-		// 	err = r.call(ctx, node, req, resp, opts)
-		// 	if err != nil {
-		// 		log.Errorf("proxyCall: HTTP call error service=%s endpoint=%s node=%s addr=%s err=%v",
-		// 			req.Service(), req.Endpoint(), node.Id, node.Address, err)
-		// 	}
-		// }
 		return err
 	}
 
 	// make copy of call method
-	//rcall := r.call
-
 	rcall := proxyCall
 
 	// wrap the call in reverse
