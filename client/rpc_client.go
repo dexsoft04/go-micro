@@ -835,8 +835,8 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 			}
 		}
 
-		log.Tracef("proxyCall: service=%s node=%s transport=%s source=%s",
-			req.Service(), node.Id, ts, source)
+		log.Tracef("proxyCall: service=%s node=%s transport=%s protocol=%s server=%s registry=%s broker=%s source=%s",
+			req.Service(), node.Id, ts, node.Metadata["protocol"], node.Metadata["server"], node.Metadata["registry"], node.Metadata["broker"], source)
 
 		switch ts {
 		case "grpc":
