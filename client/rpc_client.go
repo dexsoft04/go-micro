@@ -818,13 +818,15 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 		// 1. node.Metadata["transport"] (service-specific)
 		// 2. transportCache (cached from previous detection)
 		// 3. MICRO_TRANSPORT environment variable (global default)
-		ts, ok := node.Metadata["transport"]
-		source := "node.Metadata"
-		if !ok {
-			if v, ok := r.transportCache.Load(node.Id); ok {
-				ts = v.(string)
-				source = "transportCache"
-			} else {
+		var ts, source string
+		if v, ok := r.transportCache.Load(node.Id); ok {
+			ts = v.(string)
+			source = "transportCache"
+		} else {
+			var ok bool
+			ts, ok = node.Metadata["transport"]
+			source = "node.Metadata"
+			if !ok {
 				// Check MICRO_TRANSPORT environment variable as fallback
 				if envTransport := os.Getenv("MICRO_TRANSPORT"); envTransport == "grpc" {
 					ts = "grpc"
@@ -842,12 +844,29 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 			if err != nil {
 				log.Debugf("proxyCall: gRPC call failed, switching to HTTP for %s: %v", req.Service(), err)
 				err = r.call(ctx, node, req, resp, opts)
+				if err != nil {
+					log.Debugf("proxyCall: HTTP call failed, switching to gRPC for %s: %v", req.Service(), err)
+					err = r.grpcCall(ctx, node, req, resp, opts)
+				} else {
+					ts = "http"
+					r.transportCache.Store(node.Id, ts)
+					log.Infof("proxyCall: auto-detected HTTP call succeeded for %s node=%s", req.Service(), node.Id)
+				}
 			}
 		case "http":
 			err = r.call(ctx, node, req, resp, opts)
 			if err != nil {
 				log.Errorf("proxyCall: HTTP call error service=%s endpoint=%s node=%s addr=%s err=%v",
 					req.Service(), req.Endpoint(), node.Id, node.Address, err)
+				err = r.grpcCall(ctx, node, req, resp, opts)
+				if err != nil {
+					log.Debugf("proxyCall: gRPC call failed, switching to HTTP for %s: %v", req.Service(), err)
+					err = r.call(ctx, node, req, resp, opts)
+				} else {
+					ts = "grpc"
+					r.transportCache.Store(node.Id, ts)
+					log.Infof("proxyCall: auto-detected gRPC call succeeded for %s node=%s", req.Service(), node.Id)
+				}
 			}
 		default:
 			log.Infof("proxyCall: service=%s node=%s transport=%s source=%s", req.Service(), node.Id, ts, source)
