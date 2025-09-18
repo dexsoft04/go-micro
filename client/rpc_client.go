@@ -64,7 +64,7 @@ func newRPCClient(opt ...Option) Client {
 	gp := pool.NewPool(
 		pool.Size(opts.PoolSize),
 		pool.TTL(opts.PoolTTL),
-		pool.Transport(transport.DefaultTransport),
+		pool.Transport(transport.DefaultGrpcTransport),
 		pool.CloseTimeout(opts.PoolCloseTimeout),
 	)
 
