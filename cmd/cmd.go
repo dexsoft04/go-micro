@@ -583,7 +583,7 @@ func (c *cmd) Before(ctx *cli.Context) error {
 	if t, ok := DefaultTransports["grpc"]; ok {
 		if transport.DefaultGrpcTransport == nil {
 			transport.DefaultGrpcTransport = t()
-			clientOpts = append(clientOpts, client.GrpcTransport(transport.DefaultGrpcTransport))
+			// clientOpts = append(clientOpts, client.GrpcTransport(transport.DefaultGrpcTransport))
 			logger.Debugf("Before: initialized DefaultGrpcTransport")
 		}
 	}

@@ -64,7 +64,7 @@ func newRPCClient(opt ...Option) Client {
 	gp := pool.NewPool(
 		pool.Size(opts.PoolSize),
 		pool.TTL(opts.PoolTTL),
-		pool.Transport(transport.DefaultGrpcTransport),
+		pool.Transport(transport.DefaultTransport),
 		pool.CloseTimeout(opts.PoolCloseTimeout),
 	)
 
@@ -104,7 +104,7 @@ func (r *rpcClient) call(
 	logger := r.Options().Logger
 
 	// Log call initiation
-	log.Debugf("call: initiated HTTP call to service=%s endpoint=%s node=%s address=%s",
+	log.Tracef("call: initiated HTTP call to service=%s endpoint=%s node=%s address=%s",
 		req.Service(), req.Endpoint(), node.Id, address)
 
 	msg := &transport.Message{
@@ -142,7 +142,7 @@ func (r *rpcClient) call(
 	msg.Header["Accept"] = req.ContentType()
 
 	// Log Content-Type processing for HTTP call
-	log.Debugf("call: HTTP request Content-Type=%s Accept=%s", req.ContentType(), req.ContentType())
+	log.Tracef("call: HTTP request Method=%s Content-Type=%s Accept=%s", req.Method(), req.ContentType(), req.ContentType())
 
 	// setup old protocol
 	reqCodec := setupProtocol(msg, node)
@@ -843,28 +843,12 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 			err = r.grpcCall(ctx, node, req, resp, opts)
 			if err != nil {
 				log.Debugf("proxyCall: gRPC call failed, switching to HTTP for %s: %v", req.Service(), err)
-				err = r.call(ctx, node, req, resp, opts)
-				if err != nil {
-					log.Debugf("proxyCall: HTTP call failed, switching to gRPC for %s: %v", req.Service(), err)
-				} else {
-					ts = "http"
-					r.transportCache.Store(node.Id, ts)
-					log.Infof("proxyCall: auto-detected HTTP call succeeded for %s node=%s", req.Service(), node.Id)
-				}
 			}
 		case "http":
 			err = r.call(ctx, node, req, resp, opts)
 			if err != nil {
 				log.Errorf("proxyCall: HTTP call error service=%s endpoint=%s node=%s addr=%s err=%v",
 					req.Service(), req.Endpoint(), node.Id, node.Address, err)
-				err = r.grpcCall(ctx, node, req, resp, opts)
-				if err != nil {
-					log.Debugf("proxyCall: gRPC call failed, switching to HTTP for %s: %v", req.Service(), err)
-				} else {
-					ts = "grpc"
-					r.transportCache.Store(node.Id, ts)
-					log.Infof("proxyCall: auto-detected gRPC call succeeded for %s node=%s", req.Service(), node.Id)
-				}
 			}
 		default:
 			log.Infof("proxyCall: service=%s node=%s transport=%s source=%s", req.Service(), node.Id, ts, source)
