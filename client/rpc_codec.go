@@ -3,6 +3,9 @@ package client
 import (
 	"bytes"
 	errs "errors"
+	"runtime/debug"
+	"strings"
+
 	"go-micro.dev/v5/codec"
 	raw "go-micro.dev/v5/codec/bytes"
 	"go-micro.dev/v5/codec/grpc"
@@ -15,7 +18,6 @@ import (
 	"go-micro.dev/v5/registry"
 	"go-micro.dev/v5/transport"
 	"go-micro.dev/v5/transport/headers"
-	"strings"
 )
 
 const (
@@ -259,6 +261,7 @@ func (c *rpcCodec) ReadHeader(msg *codec.Message, r codec.MessageType) error {
 		// Enhanced error logging with more context
 		logger.Errorf("ReadHeader: transport receive error - client:%T msgType:%v contentType:%s err:%v",
 			c.client, msg.Type, msg.Header["Content-Type"], err.Error())
+		logger.Debugf("%s", string(debug.Stack()))
 
 		// Log raw error details for debugging protocol mismatches
 		if strings.Contains(err.Error(), "malformed HTTP") {
