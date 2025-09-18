@@ -424,23 +424,6 @@ func (c *cmd) Options() Options {
 }
 
 func (c *cmd) Before(ctx *cli.Context) error {
-	// Add diagnostic logging for transport configuration
-	logger.Debugf("=== Transport Configuration Debug ===")
-	logger.Debugf("MICRO_TRANSPORT env var: '%s'", os.Getenv("MICRO_TRANSPORT"))
-	logger.Debugf("ctx.String(transport): '%s'", ctx.String("transport"))
-	logger.Debugf("Current DefaultTransport: %s", transport.DefaultTransport.String())
-	logger.Debugf("Current c.opts.Transport: %s", (*c.opts.Transport).String())
-
-	// Print available transports
-	logger.Debugf("Available transports in DefaultTransports:")
-	for name := range DefaultTransports {
-		logger.Debugf("  - %s", name)
-	}
-	logger.Debugf("Available transports in c.opts.Transports:")
-	for name := range c.opts.Transports {
-		logger.Debugf("  - %s", name)
-	}
-
 	// Set GenAI provider from flags/env
 	setGenAIFromFlags(ctx)
 	// If flags are set then use them otherwise do nothing
