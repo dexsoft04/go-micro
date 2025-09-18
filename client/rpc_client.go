@@ -316,7 +316,7 @@ func (r *rpcClient) grpcCall(
 	msg.Header["Accept"] = req.ContentType()
 
 	// Log Content-Type processing for gRPC call
-	log.Debugf("grpcCall: gRPC request Content-Type=%s Accept=%s", req.ContentType(), req.ContentType())
+	log.Debugf("grpcCall: gRPC request Method=%s Content-Type=%s Accept=%s", req.Method(), req.ContentType(), req.ContentType())
 
 	// setup old protocol
 	reqCodec := setupProtocol(msg, node)
@@ -846,7 +846,6 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 				err = r.call(ctx, node, req, resp, opts)
 				if err != nil {
 					log.Debugf("proxyCall: HTTP call failed, switching to gRPC for %s: %v", req.Service(), err)
-					err = r.grpcCall(ctx, node, req, resp, opts)
 				} else {
 					ts = "http"
 					r.transportCache.Store(node.Id, ts)
@@ -861,7 +860,6 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 				err = r.grpcCall(ctx, node, req, resp, opts)
 				if err != nil {
 					log.Debugf("proxyCall: gRPC call failed, switching to HTTP for %s: %v", req.Service(), err)
-					err = r.call(ctx, node, req, resp, opts)
 				} else {
 					ts = "grpc"
 					r.transportCache.Store(node.Id, ts)
