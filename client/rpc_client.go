@@ -274,7 +274,7 @@ func (r *rpcClient) grpcCall(
 	logger := r.Options().Logger
 
 	// Log gRPC call initiation
-	log.Debugf("grpcCall: initiated gRPC call to service=%s endpoint=%s node=%s address=%s",
+	log.Tracef("grpcCall: initiated gRPC call to service=%s endpoint=%s node=%s address=%s",
 		req.Service(), req.Endpoint(), node.Id, address)
 
 	msg := &transport.Message{
@@ -833,7 +833,7 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 			}
 		}
 
-		log.Debugf("proxyCall: service=%s node=%s transport=%s source=%s",
+		log.Tracef("proxyCall: service=%s node=%s transport=%s source=%s",
 			req.Service(), node.Id, ts, source)
 
 		// if ts != "http" {
