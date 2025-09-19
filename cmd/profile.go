@@ -4,9 +4,6 @@ import (
 	"context"
 	"github.com/micro/plugins/v5/wrapper/trace/opentelemetry"
 	"github.com/urfave/cli/v2"
-	"github.com/zigo2048/mcbeam-common-lib/common/metrics"
-	metricsWrapper "github.com/zigo2048/mcbeam-common-lib/common/metrics/wrapper"
-	"github.com/zigo2048/mcbeam-common-lib/plugins/prometheus/v3"
 	"go-micro.dev/v5/client"
 	"go-micro.dev/v5/logger"
 	"go-micro.dev/v5/server"
@@ -29,23 +26,16 @@ func initConfig(ctx *cli.Context) (error, []client.Option, []server.Option) {
 	if len(reporterAddress) == 0 {
 		return nil, clientOpts, serverOpts
 	}
-	reporter, err := prometheus.New()
-	if nil != err {
-		logger.Errorf("tracer provider error: %s", err.Error())
-		return err, clientOpts, serverOpts
-	}
-
 	tracer, err := tracerProvider(reporterAddress)
 	if nil != err {
 		logger.Errorf("tracer provider error: %s reporterAddress:%s", err.Error(), reporterAddress)
 		return err, clientOpts, serverOpts
 	}
 	otel.SetTracerProvider(tracer)
-	metrics.SetDefaultMetricsReporter(reporter)
+
 	serverOpts = append(serverOpts,
 		server.WrapHandler(opentelemetry.NewHandlerWrapper()),
 		server.WrapSubscriber(opentelemetry.NewSubscriberWrapper()),
-		server.WrapHandler(metricsWrapper.New(reporter).HandlerFunc),
 	)
 	return nil, clientOpts, serverOpts
 }

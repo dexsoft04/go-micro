@@ -4,7 +4,9 @@ package cmd
 import (
 	"fmt"
 	"github.com/philchia/agollo/v4"
+	"github.com/zigo2048/mcbeam-common-lib/common/metrics"
 	"github.com/zigo2048/mcbeam-common-lib/plugins/config/apollo/v3"
+	"github.com/zigo2048/mcbeam-common-lib/plugins/prometheus/v3"
 	"go-micro.dev/v5/wrapper/trace/opentelemetry"
 	"math/rand"
 	"os"
@@ -48,6 +50,8 @@ import (
 	"github.com/zigo2048/mcbeam-common-lib/common/config"
 	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader"
 	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/wrapper"
+
+	metricsWrapper "github.com/zigo2048/mcbeam-common-lib/common/metrics/wrapper"
 )
 
 type Cmd interface {
@@ -719,6 +723,14 @@ func (c *cmd) Before(ctx *cli.Context) error {
 			return fmt.Errorf("failed to parse client_pool_close_timeout: %v", t)
 		}
 		clientOpts = append(clientOpts, client.PoolCloseTimeout(d))
+	}
+
+	reporter, err := prometheus.New()
+	if nil != err {
+		logger.Errorf("tracer provider error: %s", err.Error())
+	} else {
+		metrics.SetDefaultMetricsReporter(reporter)
+		serverOpts = append(serverOpts, server.WrapHandler(metricsWrapper.New(reporter).HandlerFunc))
 	}
 
 	if err, cliOpts, svrOpts := initConfig(ctx); nil != err {
