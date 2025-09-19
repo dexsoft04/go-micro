@@ -7,7 +7,6 @@ import (
 	"github.com/zigo2048/mcbeam-common-lib/common/metrics"
 	"github.com/zigo2048/mcbeam-common-lib/plugins/config/apollo/v3"
 	"github.com/zigo2048/mcbeam-common-lib/plugins/prometheus/v3"
-	"go-micro.dev/v5/wrapper/trace/opentelemetry"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -583,8 +582,6 @@ func (c *cmd) Before(ctx *cli.Context) error {
 		logger.Tracef("Transport configuration skipped: name='%s', len(name)>0=%v, String()!=name=%v",
 			ctx.String("transport"), len(ctx.String("transport")) > 0, (*c.opts.Transport).String() != ctx.String("transport"))
 	}
-
-	clientOpts = append(clientOpts, client.Wrap(opentelemetry.NewClientWrapper()))
 
 	clientOpts = append(clientOpts, client.Transport(transport.DefaultTransport))
 
