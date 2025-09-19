@@ -145,6 +145,17 @@ The following files contain compatibility code (marked with `===== COMPATIBILITY
 
 ## 相关文档
 
+### 开发运维指南
+- [SSH 隧道完全指南](docs/ssh-tunnel-guide.md) - SSH 隧道基础概念、实战案例、工具集成、故障排查等完整知识体系
+
+### 性能测试与压测
+- [压测基础概念指南](docs/load-testing-guide.md) - 压测类型、关键指标、微服务压测注意事项等基础知识
+- [流量捕获与回放指南](docs/traffic-capture-guide.md) - 使用 HAR、mitmproxy、tshark 等工具捕获真实流量并进行回放测试
+- [K6 压测实战指南](docs/k6-testing-guide.md) - 使用 K6 进行 HTTP API 和 WebSocket 压测的完整指南
+- [gRPC 服务压测指南](docs/grpc-testing-guide.md) - 使用 ghz 工具对 gRPC 微服务进行性能测试
+- [性能监控与分析指南](docs/monitoring-analysis-guide.md) - Prometheus + Grafana 监控搭建、pprof 性能分析、链路追踪等
+- [压测脚本工具集](docs/testing-scripts/README.md) - 开箱即用的压测脚本，包括 K6、ghz、流量回放等工具
+
 ### 性能优化指南
 - [高并发优化计划](docs/high-concurrency-optimization-plan.md) - 详细的性能优化实施计划，包括连接池优化、内存管理、服务发现缓存等改进方案
 

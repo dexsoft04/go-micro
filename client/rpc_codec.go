@@ -179,7 +179,7 @@ func setupProtocol(msg *transport.Message, node *registry.Node) codec.NewCodec {
 
 	finalContentType := msg.Header["Content-Type"]
 	codec := defaultCodecs[finalContentType]
-	logger.Debugf("setupProtocol: final Content-Type: %s, codec found: %t", finalContentType, codec != nil)
+	logger.Tracef("setupProtocol: final Content-Type: %s, codec found: %t", finalContentType, codec != nil)
 
 	return codec
 }
@@ -261,12 +261,12 @@ func (c *rpcCodec) ReadHeader(msg *codec.Message, r codec.MessageType) error {
 		// Enhanced error logging with more context
 		logger.Errorf("ReadHeader: transport receive error - client:%T msgType:%v contentType:%s err:%v",
 			c.client, msg.Type, msg.Header["Content-Type"], err.Error())
-		logger.Debugf("%s", string(debug.Stack()))
+		logger.Tracef("%s", string(debug.Stack()))
 
 		// Log raw error details for debugging protocol mismatches
 		if strings.Contains(err.Error(), "malformed HTTP") {
 			logger.Errorf("ReadHeader: detected malformed HTTP response, possible protocol mismatch")
-			logger.Debugf("ReadHeader: error details - %+v", err)
+			logger.Tracef("ReadHeader: error details - %+v", err)
 		}
 
 		return errors.InternalServerError("go.micro.client.transport 666", err.Error())

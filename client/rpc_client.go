@@ -54,21 +54,21 @@ func newRPCClient(opt ...Option) Client {
 		pool.CloseTimeout(opts.PoolCloseTimeout),
 	)
 
-	// Create rpcClient with proper initialization
-	rc := &rpcClient{
-		opts: opts,
-		pool: p,
-		seq:  0,
-	}
-
 	gp := pool.NewPool(
 		pool.Size(opts.PoolSize),
 		pool.TTL(opts.PoolTTL),
-		pool.Transport(transport.DefaultGrpcTransport),
+		pool.Transport(opts.GrpcTransport),
 		pool.CloseTimeout(opts.PoolCloseTimeout),
 	)
 
-	rc.grpcPool = gp
+	// Create rpcClient with proper initialization
+	rc := &rpcClient{
+		opts:     opts,
+		pool:     p,
+		grpcPool: gp,
+		seq:      0,
+	}
+
 	rc.once.Store(false)
 
 	c := Client(rc)

@@ -545,46 +545,53 @@ func (c *cmd) Before(ctx *cli.Context) error {
 
 	// Set the transport
 	if name := ctx.String("transport"); len(name) > 0 && (*c.opts.Transport).String() != name {
-		logger.Debugf("=== Transport Configuration ===")
-		logger.Debugf("Requested transport: '%s'", name)
-		logger.Debugf("Current transport: '%s'", (*c.opts.Transport).String())
-		logger.Debugf("Transport condition check: len(name)>0=%v, String()!=name=%v", len(name) > 0, (*c.opts.Transport).String() != name)
+		logger.Tracef("=== Transport Configuration ===")
+		logger.Tracef("Requested transport: '%s'", name)
+		logger.Tracef("Current transport: '%s'", (*c.opts.Transport).String())
+		logger.Tracef("Transport condition check: len(name)>0=%v, String()!=name=%v", len(name) > 0, (*c.opts.Transport).String() != name)
 
 		t, ok := c.opts.Transports[name]
 		if !ok {
-			logger.Debugf("Transport '%s' not found in c.opts.Transports", name)
-			logger.Debugf("Available transports in c.opts.Transports:")
+			logger.Tracef("Transport '%s' not found in c.opts.Transports", name)
+			logger.Tracef("Available transports in c.opts.Transports:")
 			for availName := range c.opts.Transports {
-				logger.Debugf("  - %s", availName)
+				logger.Tracef("  - %s", availName)
 			}
 			return fmt.Errorf("Transport %s not found", name)
 		}
 
-		logger.Debugf("Found transport '%s', creating instance", name)
+		logger.Tracef("Found transport '%s', creating instance", name)
 		transportInstance := t()
-		logger.Debugf("Created transport instance: %s", transportInstance.String())
+		logger.Tracef("Created transport instance: %s", transportInstance.String())
 
-		logger.Debugf("Calling setTransport...")
+		logger.Tracef("Calling setTransport...")
 		sopts, clopts := c.setTransport(transportInstance)
-		logger.Debugf("setTransport returned %d server options and %d client options", len(sopts), len(clopts))
+		logger.Tracef("setTransport returned %d server options and %d client options", len(sopts), len(clopts))
 
 		serverOpts = append(serverOpts, sopts...)
 		clientOpts = append(clientOpts, clopts...)
 
-		logger.Debugf("Transport configuration completed. Current transport: %s", (*c.opts.Transport).String())
-		logger.Debugf("Default transport after config: %s", transport.DefaultTransport.String())
+		logger.Tracef("Transport configuration completed. Current transport: %s", (*c.opts.Transport).String())
+		logger.Tracef("Default transport after config: %s", transport.DefaultTransport.String())
 
 	} else {
-		logger.Debugf("Transport configuration skipped: name='%s', len(name)>0=%v, String()!=name=%v",
+		logger.Tracef("Transport configuration skipped: name='%s', len(name)>0=%v, String()!=name=%v",
 			ctx.String("transport"), len(ctx.String("transport")) > 0, (*c.opts.Transport).String() != ctx.String("transport"))
 	}
 
+	clientOpts = append(clientOpts, client.Transport(transport.DefaultTransport))
+
 	// Initialize DefaultGrpcTransport for backward compatibility
-	if t, ok := DefaultTransports["grpc"]; ok {
-		if transport.DefaultGrpcTransport == nil {
+	// Always ensure DefaultGrpcTransport is initialized, even if grpc package isn't imported
+	if transport.DefaultGrpcTransport == nil {
+		if t, ok := DefaultTransports["grpc"]; ok {
 			transport.DefaultGrpcTransport = t()
-			// clientOpts = append(clientOpts, client.GrpcTransport(transport.DefaultGrpcTransport))
-			logger.Debugf("Before: initialized DefaultGrpcTransport")
+			clientOpts = append(clientOpts, client.GrpcTransport(transport.DefaultGrpcTransport))
+			logger.Tracef("Before: initialized DefaultGrpcTransport from DefaultTransports")
+		} else {
+			// Fallback: grpc transport will be initialized when grpc package is imported
+			// For now, leave it as nil to avoid circular import issues
+			logger.Tracef("Before: grpc not found in DefaultTransports, will be lazy initialized")
 		}
 	}
 
@@ -597,7 +604,7 @@ func (c *cmd) Before(ctx *cli.Context) error {
 			MetaAddr:       os.Getenv("MICRO_CONFIG_ADDRESS"),
 			CacheDir:       filepath.Join(os.TempDir(), "apollo"),
 		}))
-		logger.Debugf("Before: initialized config.DefaultConfig with Apollo")
+		logger.Tracef("Before: initialized config.DefaultConfig with Apollo")
 	}
 
 	// Parse the server options
@@ -733,16 +740,16 @@ func (c *cmd) Before(ctx *cli.Context) error {
 
 	// Use an init option?
 	if len(clientOpts) > 0 {
-		logger.Debugf("=== Applying Client Options ===")
-		logger.Debugf("About to apply %d client options", len(clientOpts))
-		logger.Debugf("Current client before Init: %s", (*c.opts.Client).String())
+		logger.Tracef("=== Applying Client Options ===")
+		logger.Tracef("About to apply %d client options", len(clientOpts))
+		logger.Tracef("Current client before Init: %s", (*c.opts.Client).String())
 
 		// Check current client's transport before applying options
 		currentClientTransport := (*c.opts.Client).Options().Transport
 		if currentClientTransport != nil {
-			logger.Debugf("Client's current internal transport before Init: %s", currentClientTransport.String())
+			logger.Tracef("Client's current internal transport before Init: %s", currentClientTransport.String())
 		} else {
-			logger.Debugf("Client's current internal transport before Init: <nil>")
+			logger.Tracef("Client's current internal transport before Init: <nil>")
 		}
 
 		if err := (*c.opts.Client).Init(clientOpts...); err != nil {
@@ -750,17 +757,17 @@ func (c *cmd) Before(ctx *cli.Context) error {
 		}
 
 		// Verify client transport after applying options
-		logger.Debugf("Client after Init: %s", (*c.opts.Client).String())
+		logger.Tracef("Client after Init: %s", (*c.opts.Client).String())
 		afterClientTransport := (*c.opts.Client).Options().Transport
 		if afterClientTransport != nil {
-			logger.Debugf("Client's internal transport after Init: %s", afterClientTransport.String())
+			logger.Tracef("Client's internal transport after Init: %s", afterClientTransport.String())
 		} else {
-			logger.Debugf("Client's internal transport after Init: <nil>")
+			logger.Tracef("Client's internal transport after Init: <nil>")
 		}
 
 		// Update global DefaultClient
 		client.DefaultClient = *c.opts.Client
-		logger.Debugf("Updated client.DefaultClient to: %s", client.DefaultClient.String())
+		logger.Tracef("Updated client.DefaultClient to: %s", client.DefaultClient.String())
 	}
 
 	// config
@@ -786,20 +793,20 @@ func (c *cmd) Before(ctx *cli.Context) error {
 	}
 
 	// Final configuration status logging
-	logger.Debugf("=== Final Configuration Status ===")
-	logger.Debugf("DefaultTransport: %s", transport.DefaultTransport.String())
-	logger.Debugf("DefaultClient type: %s", client.DefaultClient.String())
-	logger.Debugf("DefaultServer type: %s", server.DefaultServer.String())
-	logger.Debugf("c.opts.Transport: %s", (*c.opts.Transport).String())
-	logger.Debugf("c.opts.Client: %s", (*c.opts.Client).String())
-	logger.Debugf("c.opts.Server: %s", (*c.opts.Server).String())
+	logger.Tracef("=== Final Configuration Status ===")
+	logger.Tracef("DefaultTransport: %s", transport.DefaultTransport.String())
+	logger.Tracef("DefaultClient type: %s", client.DefaultClient.String())
+	logger.Tracef("DefaultServer type: %s", server.DefaultServer.String())
+	logger.Tracef("c.opts.Transport: %s", (*c.opts.Transport).String())
+	logger.Tracef("c.opts.Client: %s", (*c.opts.Client).String())
+	logger.Tracef("c.opts.Server: %s", (*c.opts.Server).String())
 
 	// Check client transport options
 	clientTransport := (*c.opts.Client).Options().Transport
 	if clientTransport != nil {
-		logger.Debugf("Client's internal transport: %s", clientTransport.String())
+		logger.Tracef("Client's internal transport: %s", clientTransport.String())
 	} else {
-		logger.Debugf("Client's internal transport: <nil>")
+		logger.Tracef("Client's internal transport: <nil>")
 	}
 
 	return nil
@@ -855,34 +862,12 @@ func (c *cmd) setStore(s store.Store) ([]server.Option, []client.Option) {
 }
 
 func (c *cmd) setTransport(t transport.Transport) ([]server.Option, []client.Option) {
-	logger.Debugf("=== setTransport Method ===")
-	logger.Debugf("Received transport instance: %s", t.String())
-	logger.Debugf("Current c.opts.Transport before update: %s", (*c.opts.Transport).String())
-	logger.Debugf("Current DefaultTransport before update: %s", transport.DefaultTransport.String())
-
+	logger.Tracef("=== setTransport Method ===")
 	var serverOpts []server.Option
 	var clientOpts []client.Option
-
-	// Update the cmd options transport
-	*c.opts.Transport = t
-	logger.Debugf("Updated c.opts.Transport to: %s", (*c.opts.Transport).String())
-
 	// Create server and client options
-	serverOpts = append(serverOpts, server.Transport(*c.opts.Transport))
-	// client transport don't change 20250919
-	//clientOpts = append(clientOpts, client.Transport(*c.opts.Transport))
-	logger.Debugf("Created server transport option for: %s", (*c.opts.Transport).String())
-	logger.Debugf("Created client transport option for: %s", (*c.opts.Transport).String())
-
-	// Debug client option details
-	logger.Debugf("client.Transport option points to: %s", (*c.opts.Transport).String())
-	logger.Debugf("This should replace client's internal transport")
-
-	// Update the global default transport
-	transport.DefaultTransport = *c.opts.Transport
-	logger.Debugf("Updated DefaultTransport to: %s", transport.DefaultTransport.String())
-
-	logger.Debugf("setTransport completed, returning %d server opts and %d client opts", len(serverOpts), len(clientOpts))
+	serverOpts = append(serverOpts, server.Transport(t))
+	logger.Tracef("Created server transport option for: %s", (*c.opts.Transport).String())
 	return serverOpts, clientOpts
 }
 
