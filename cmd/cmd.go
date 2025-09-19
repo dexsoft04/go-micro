@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"fmt"
+	"go-micro.dev/v5/wrapper/trace/opentelemetry"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -579,6 +580,7 @@ func (c *cmd) Before(ctx *cli.Context) error {
 			ctx.String("transport"), len(ctx.String("transport")) > 0, (*c.opts.Transport).String() != ctx.String("transport"))
 	}
 
+	clientOpts = append(clientOpts, client.Wrap(opentelemetry.NewClientWrapper()))
 	clientOpts = append(clientOpts, client.Transport(transport.DefaultTransport))
 
 	// Initialize DefaultGrpcTransport for backward compatibility
