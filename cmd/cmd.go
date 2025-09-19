@@ -4,34 +4,34 @@ package cmd
 import (
 	"fmt"
 	"math/rand"
-	"sort"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/philchia/agollo/v4"
 	"github.com/urfave/cli/v2"
 	"github.com/zigo2048/mcbeam-common-lib/common/config"
-	mconfig "go-micro.dev/v5/config"
 	"github.com/zigo2048/mcbeam-common-lib/plugins/config/apollo/v3"
+	"go-micro.dev/v5/auth"
+	"go-micro.dev/v5/broker"
+	nbroker "go-micro.dev/v5/broker/nats"
+	rabbit "go-micro.dev/v5/broker/rabbitmq"
 	"go-micro.dev/v5/cache"
 	"go-micro.dev/v5/cache/redis"
 	"go-micro.dev/v5/client"
+	mconfig "go-micro.dev/v5/config"
 	"go-micro.dev/v5/config/tls"
 	"go-micro.dev/v5/debug/profile"
 	"go-micro.dev/v5/debug/profile/http"
 	"go-micro.dev/v5/debug/profile/pprof"
 	"go-micro.dev/v5/debug/trace"
 	"go-micro.dev/v5/events"
-	"go-micro.dev/v5/logger"
-	"go-micro.dev/v5/auth"
-	"go-micro.dev/v5/broker"
-	nbroker "go-micro.dev/v5/broker/nats"
-	rabbit "go-micro.dev/v5/broker/rabbitmq"
 	"go-micro.dev/v5/genai"
 	"go-micro.dev/v5/genai/gemini"
 	"go-micro.dev/v5/genai/openai"
+	"go-micro.dev/v5/logger"
 	"go-micro.dev/v5/registry"
 	"go-micro.dev/v5/registry/consul"
 	"go-micro.dev/v5/registry/etcd"
@@ -869,7 +869,8 @@ func (c *cmd) setTransport(t transport.Transport) ([]server.Option, []client.Opt
 
 	// Create server and client options
 	serverOpts = append(serverOpts, server.Transport(*c.opts.Transport))
-	clientOpts = append(clientOpts, client.Transport(*c.opts.Transport))
+	// client transport don't change 20250919
+	//clientOpts = append(clientOpts, client.Transport(*c.opts.Transport))
 	logger.Debugf("Created server transport option for: %s", (*c.opts.Transport).String())
 	logger.Debugf("Created client transport option for: %s", (*c.opts.Transport).String())
 
@@ -906,9 +907,9 @@ func (c *cmd) configureBrokerTLS(ctx *cli.Context) error {
 	if cryptoTLS != nil {
 		// Store TLS config for broker components to use
 		// Most brokers will check for TLS config in their Init/Connect methods
-		logger.Infof("Broker TLS configuration prepared (CA: %t, Cert: %t, Key: %t)", 
+		logger.Infof("Broker TLS configuration prepared (CA: %t, Cert: %t, Key: %t)",
 			tlsConfig.CA != "", tlsConfig.Cert != "", tlsConfig.Key != "")
-		
+
 		// Note: The actual TLS application depends on the specific broker implementation
 		// Each broker type should handle TLS configuration in their own Init methods
 	}
@@ -937,9 +938,9 @@ func (c *cmd) configureRegistryTLS(ctx *cli.Context) error {
 	if cryptoTLS != nil {
 		// Store TLS config for registry components to use
 		// Most registries will check for TLS config in their Init/Connect methods
-		logger.Infof("Registry TLS configuration prepared (CA: %t, Cert: %t, Key: %t)", 
+		logger.Infof("Registry TLS configuration prepared (CA: %t, Cert: %t, Key: %t)",
 			tlsConfig.CA != "", tlsConfig.Cert != "", tlsConfig.Key != "")
-		
+
 		// Note: The actual TLS application depends on the specific registry implementation
 		// Each registry type should handle TLS configuration in their own Init methods
 	}
@@ -1013,24 +1014,23 @@ func setGenAIFromFlags(ctx *cli.Context) {
 	}
 }
 
-
 // shouldInitializeApollo checks if Apollo configuration should be initialized
 func shouldInitializeApollo() bool {
 	// Don't initialize Apollo in test environment
 	if os.Getenv("GO_ENV") == "test" || os.Getenv("MICRO_CONFIG") == "memory" {
 		return false
 	}
-	
+
 	// Don't initialize if required Apollo environment variables are missing
 	if os.Getenv("MICRO_CONFIG_ADDRESS") == "" {
 		return false
 	}
-	
+
 	// Don't initialize if explicitly disabled
 	if os.Getenv("MICRO_CONFIG_DISABLED") == "true" {
 		return false
 	}
-	
+
 	return true
 }
 
