@@ -256,6 +256,8 @@ github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
 github.com/micro/plugins/v5/auth/jwt v0.0.0-20250502062951-be3f35ce6464 h1:einNYloNFQ4h52c0CBvWv67frSq1xS0EUXCf1ncr1UM=
 github.com/micro/plugins/v5/auth/jwt v0.0.0-20250502062951-be3f35ce6464/go.mod h1:Mqqsr1LYrIiAuqKUI/C0sJRoIB80SATNBagcXjqK7oQ=
+github.com/micro/plugins/v5/wrapper/trace/opentelemetry v1.0.2 h1:gjh3I2E9WBwVVXUft1V2FfAWocwDZaf0xaFgGXEfmL0=
+github.com/micro/plugins/v5/wrapper/trace/opentelemetry v1.0.2/go.mod h1:u6Xc2G2SWNn45AemfCU/oi2qAziljK2f3M2T+cccX2A=
 github.com/miekg/dns v1.1.26/go.mod h1:bPDLeHnStXmXAq1m/Ch/hvfNHr14JKNPMBo3VZKjuso=
 github.com/miekg/dns v1.1.41/go.mod h1:p6aan82bvRIyn+zDIv9xYNUpwa73JcSh9BKwknJysuI=
 github.com/miekg/dns v1.1.63 h1:8M5aAw6OMZfFXTT7K5V0Eu5YiiL8l7nUAkyN6C9YwaY=

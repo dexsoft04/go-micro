@@ -3,6 +3,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/philchia/agollo/v4"
+	"github.com/zigo2048/mcbeam-common-lib/plugins/config/apollo/v3"
 	"go-micro.dev/v5/wrapper/trace/opentelemetry"
 	"math/rand"
 	"os"
@@ -11,10 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/philchia/agollo/v4"
 	"github.com/urfave/cli/v2"
-	"github.com/zigo2048/mcbeam-common-lib/common/config"
-	"github.com/zigo2048/mcbeam-common-lib/plugins/config/apollo/v3"
 	"go-micro.dev/v5/auth"
 	"go-micro.dev/v5/broker"
 	nbroker "go-micro.dev/v5/broker/nats"
@@ -46,6 +45,7 @@ import (
 	"go-micro.dev/v5/transport"
 	ntransport "go-micro.dev/v5/transport/nats"
 
+	"github.com/zigo2048/mcbeam-common-lib/common/config"
 	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader"
 	"github.com/zigo2048/mcbeam-common-lib/common/wrapper/wrapper"
 )
@@ -581,6 +581,7 @@ func (c *cmd) Before(ctx *cli.Context) error {
 	}
 
 	clientOpts = append(clientOpts, client.Wrap(opentelemetry.NewClientWrapper()))
+
 	clientOpts = append(clientOpts, client.Transport(transport.DefaultTransport))
 
 	// Initialize DefaultGrpcTransport for backward compatibility
@@ -595,18 +596,6 @@ func (c *cmd) Before(ctx *cli.Context) error {
 			// For now, leave it as nil to avoid circular import issues
 			logger.Tracef("Before: grpc not found in DefaultTransports, will be lazy initialized")
 		}
-	}
-
-	// Initialize config.DefaultConfig for Apollo configuration if needed
-	if config.DefaultConfig == nil && shouldInitializeApollo() {
-		config.DefaultConfig = apollo.NewConfig(apollo.WithConfig(&agollo.Conf{
-			AppID:          os.Getenv("MICRO_NAMESPACE"),
-			Cluster:        "default",
-			NameSpaceNames: []string{getNamespace()},
-			MetaAddr:       os.Getenv("MICRO_CONFIG_ADDRESS"),
-			CacheDir:       filepath.Join(os.TempDir(), "apollo"),
-		}))
-		logger.Tracef("Before: initialized config.DefaultConfig with Apollo")
 	}
 
 	// Parse the server options
@@ -732,6 +721,20 @@ func (c *cmd) Before(ctx *cli.Context) error {
 		clientOpts = append(clientOpts, client.PoolCloseTimeout(d))
 	}
 
+	if err, cliOpts, svrOpts := initConfig(ctx); nil != err {
+		logger.Fatalf("Error initializing client: %v", err)
+	} else {
+		if len(cliOpts) > 0 {
+			clientOpts = append(clientOpts, cliOpts...)
+		}
+		if len(svrOpts) > 0 {
+			serverOpts = append(serverOpts, svrOpts...)
+		}
+	}
+
+	serverOpts = append(serverOpts, server.WrapHandler(apiheader.NewDefaultHeaderHandlerWrapper))
+	serverOpts = append(serverOpts, server.WrapHandler(wrapper.AuthHandler()))
+
 	// We have some command line opts for the server.
 	// Lets set it up
 	if len(serverOpts) > 0 {
@@ -785,13 +788,16 @@ func (c *cmd) Before(ctx *cli.Context) error {
 		}
 	}
 
-	// Initialize core server wrappers
-	err := server.DefaultServer.Init(
-		server.WrapHandler(apiheader.NewDefaultHeaderHandlerWrapper),
-		server.WrapHandler(wrapper.AuthHandler()),
-	)
-	if err != nil {
-		logger.Fatalf("Error initializing core server wrappers: %v", err)
+	// Initialize config.DefaultConfig for Apollo configuration if needed
+	if config.DefaultConfig == nil && shouldInitializeApollo() {
+		config.DefaultConfig = apollo.NewConfig(apollo.WithConfig(&agollo.Conf{
+			AppID:          os.Getenv("MICRO_NAMESPACE"),
+			Cluster:        "default",
+			NameSpaceNames: []string{getNamespace()},
+			MetaAddr:       os.Getenv("MICRO_CONFIG_ADDRESS"),
+			CacheDir:       filepath.Join(os.TempDir(), "apollo"),
+		}))
+		logger.Tracef("Before: initialized config.DefaultConfig with Apollo")
 	}
 
 	// Final configuration status logging
@@ -802,15 +808,6 @@ func (c *cmd) Before(ctx *cli.Context) error {
 	logger.Tracef("c.opts.Transport: %s", (*c.opts.Transport).String())
 	logger.Tracef("c.opts.Client: %s", (*c.opts.Client).String())
 	logger.Tracef("c.opts.Server: %s", (*c.opts.Server).String())
-
-	// Check client transport options
-	clientTransport := (*c.opts.Client).Options().Transport
-	if clientTransport != nil {
-		logger.Tracef("Client's internal transport: %s", clientTransport.String())
-	} else {
-		logger.Tracef("Client's internal transport: <nil>")
-	}
-
 	return nil
 }
 
@@ -1004,10 +1001,6 @@ func setGenAIFromFlags(ctx *cli.Context) {
 // shouldInitializeApollo checks if Apollo configuration should be initialized
 func shouldInitializeApollo() bool {
 	// Don't initialize Apollo in test environment
-	if os.Getenv("GO_ENV") == "test" || os.Getenv("MICRO_CONFIG") == "memory" {
-		return false
-	}
-
 	// Don't initialize if required Apollo environment variables are missing
 	if os.Getenv("MICRO_CONFIG_ADDRESS") == "" {
 		return false
@@ -1017,7 +1010,6 @@ func shouldInitializeApollo() bool {
 	if os.Getenv("MICRO_CONFIG_DISABLED") == "true" {
 		return false
 	}
-
 	return true
 }
 
