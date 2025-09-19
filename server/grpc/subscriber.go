@@ -187,10 +187,10 @@ func (g *grpcServer) createSubHandler(sb *subscriber, opts server.Options) broke
 			msg.Header["Content-Type"] = defaultContentType
 			ct = defaultContentType
 		}
-		
+
 		// Log received Content-Type for gRPC subscriber
-		log.Debugf("grpc_subscriber: processing message with Content-Type=%s", ct)
-		
+		log.Tracef("grpc_subscriber: processing message with Content-Type=%s", ct)
+
 		cf, err := g.newGRPCCodec(ct)
 		if err != nil {
 			return err

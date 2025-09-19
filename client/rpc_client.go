@@ -316,7 +316,7 @@ func (r *rpcClient) grpcCall(
 	msg.Header["Accept"] = req.ContentType()
 
 	// Log Content-Type processing for gRPC call
-	log.Debugf("grpcCall: gRPC request Method=%s Content-Type=%s Accept=%s", req.Method(), req.ContentType(), req.ContentType())
+	log.Tracef("grpcCall: gRPC request Method=%s Content-Type=%s Accept=%s", req.Method(), req.ContentType(), req.ContentType())
 
 	// setup old protocol
 	reqCodec := setupProtocol(msg, node)
@@ -717,7 +717,7 @@ func (r *rpcClient) Init(opts ...Option) error {
 			pool.CloseTimeout(r.opts.PoolCloseTimeout),
 		)
 
-		log.Debugf("Init: recreated gRPC pool with transport: %s", grpcTransport.String())
+		log.Tracef("Init: recreated gRPC pool with transport: %s", grpcTransport.String())
 	}
 	return nil
 }
@@ -842,7 +842,7 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 		case "grpc":
 			err = r.grpcCall(ctx, node, req, resp, opts)
 			if err != nil {
-				log.Debugf("proxyCall: gRPC call failed, switching to HTTP for %s: %v", req.Service(), err)
+				log.Tracef("proxyCall: gRPC call failed, switching to HTTP for %s: %v", req.Service(), err)
 			}
 		case "http":
 			err = r.call(ctx, node, req, resp, opts)
@@ -854,13 +854,13 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 			log.Infof("proxyCall: service=%s node=%s transport=%s source=%s", req.Service(), node.Id, ts, source)
 			err = r.grpcCall(ctx, node, req, resp, opts)
 			if ts == "" && err != nil {
-				log.Debugf("proxyCall: gRPC call failed, switching to HTTP for %s: %v", req.Service(), err)
+				log.Tracef("proxyCall: gRPC call failed, switching to HTTP for %s: %v", req.Service(), err)
 				for k, v := range node.Metadata {
-					log.Debugf("=== Call node.Metadata %s %s %s", req.Service(), k, v)
+					log.Tracef("=== Call node.Metadata %s %s %s", req.Service(), k, v)
 				}
 				err = r.call(ctx, node, req, resp, opts)
 				if err != nil {
-					log.Debugf("proxyCall: HTTP fallback failed for %s: %v", req.Service(), err)
+					log.Tracef("proxyCall: HTTP fallback failed for %s: %v", req.Service(), err)
 					return err
 				}
 				ts = "http"
@@ -897,7 +897,7 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 
 		// select next node
 		node, err := next()
-		//log.Debugf("=== call node:%v err:%v", node, err)
+		//log.Tracef("=== call node:%v err:%v", node, err)
 		service := request.Service()
 
 		if err != nil {
