@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-micro.dev/v5/wrapper/trace/opentelemetry"
+	"time"
 
 	"github.com/urfave/cli/v2"
 	"go-micro.dev/v5/client"
@@ -15,6 +16,7 @@ import (
 
 	fileexporter "go-micro.dev/v5/cmd/exporter"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/propagation"
@@ -55,9 +57,10 @@ func newExporter(ctx context.Context, address string) (trace.SpanExporter, error
 		// file:///path/to/traces.jsonl - output to file
 		filePath := strings.TrimPrefix(address, "file://")
 
-		// Check if simplified format is requested
+		// Check file format
 		format := os.Getenv("MICRO_TRACING_FILE_FORMAT")
-		if format == "simple" || format == "json" {
+		switch format {
+		case "simple":
 			// Use simplified JSON format for better performance analysis
 			exporter, err = fileexporter.NewSimpleFileExporter(filePath)
 			if err != nil {
@@ -66,8 +69,28 @@ func newExporter(ctx context.Context, address string) (trace.SpanExporter, error
 			}
 			logger.Infof("Using simple file exporter: %s", filePath)
 			return exporter, nil
-		} else {
-			// Use standard OpenTelemetry format
+
+		case "json":
+			// Use standard OpenTelemetry JSON format
+			file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
+				logger.Errorf("failed to open trace file %s: %v", filePath, err)
+				return nil, fmt.Errorf("failed to open trace file: %v", err)
+			}
+			exporter, err = stdouttrace.New(
+				stdouttrace.WithWriter(file),
+				stdouttrace.WithPrettyPrint(), // JSON format with pretty printing
+			)
+			if err != nil {
+				file.Close()
+				logger.Errorf("failed to create JSON file exporter: %v", err)
+				return nil, err
+			}
+			logger.Infof("Using JSON file exporter: %s", filePath)
+			return exporter, nil
+
+		default:
+			// Default: use standard OpenTelemetry format (compact)
 			file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 			if err != nil {
 				logger.Errorf("failed to open trace file %s: %v", filePath, err)
@@ -79,7 +102,7 @@ func newExporter(ctx context.Context, address string) (trace.SpanExporter, error
 			)
 			if err != nil {
 				file.Close()
-				logger.Errorf("failed to create file exporter: %v", err)
+				logger.Errorf("failed to create standard file exporter: %v", err)
 				return nil, err
 			}
 			logger.Infof("Using standard file exporter: %s", filePath)
@@ -135,10 +158,22 @@ func newExporter(ctx context.Context, address string) (trace.SpanExporter, error
 }
 
 func tracerProvider(ctx context.Context, url string) (*trace.TracerProvider, error) {
+	// Get instance ID for multi-instance environments
+	instanceID := os.Getenv("MICRO_INSTANCE_ID")
+	if instanceID == "" {
+		hostname, _ := os.Hostname()
+		instanceID = fmt.Sprintf("%s-%d", hostname, os.Getpid())
+	}
+
+	// Check if pressure testing mode is enabled
+	pressureTestMode := os.Getenv("MICRO_PRESSURE_TEST_MODE")
+
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
 			semconv.ServiceName(os.Getenv("MICRO_SERVICE_NAME")),
 			semconv.ServiceVersion(os.Getenv("MICRO_SERVER_VERSION")),
+			attribute.String("instance.id", instanceID),
+			attribute.String("pressure.test.mode", pressureTestMode),
 		),
 	)
 	if err != nil {
@@ -154,9 +189,27 @@ func tracerProvider(ctx context.Context, url string) (*trace.TracerProvider, err
 		propagation.Baggage{},
 	)
 	otel.SetTextMapPropagator(propagator)
-	tp := trace.NewTracerProvider(
-		trace.WithBatcher(exporter),
-		trace.WithResource(res),
-	)
+
+	// Configure trace provider options based on pressure testing mode
+	var options []trace.TracerProviderOption
+	options = append(options, trace.WithResource(res))
+
+	if pressureTestMode == "true" {
+		// Pressure testing mode: optimize for performance and completeness
+		logger.Info("Pressure testing mode enabled - using optimized batch settings")
+		options = append(options, trace.WithBatcher(exporter,
+			trace.WithBatchTimeout(100*time.Millisecond), // Fast batch processing
+			trace.WithMaxExportBatchSize(512),            // Larger batches
+			trace.WithMaxQueueSize(2048),                 // Larger queue
+		))
+		// Always sample in pressure testing mode
+		options = append(options, trace.WithSampler(trace.AlwaysSample()))
+	} else {
+		// Normal mode: standard settings
+		options = append(options, trace.WithBatcher(exporter))
+		// Use default sampler (can be configured via OTEL_TRACES_SAMPLER)
+	}
+
+	tp := trace.NewTracerProvider(options...)
 	return tp, nil
 }
