@@ -104,6 +104,25 @@ func (p *pool) getConn(dialCtx context.Context, addr string, opts ...grpc.DialOp
 			continue
 		case connectivity.Ready:
 		case connectivity.Idle:
+			// For idle connections, try to activate them before use
+			conn.Connect()
+
+			// Give the connection a moment to transition to Ready
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+
+			// If the connection can't become ready, it might be dead
+			if !conn.WaitForStateChange(ctx, connectivity.Idle) {
+				// Connection couldn't be activated, remove it
+				next := conn.next
+				if conn.streams == 0 {
+					removeConn(conn)
+					conn.ClientConn.Close()
+					sp.idle--
+				}
+				conn = next
+				continue
+			}
 		}
 		//  a old conn
 		if now-conn.created > p.ttl {

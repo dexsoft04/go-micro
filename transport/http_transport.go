@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
+	"time"
 
 	"go-micro.dev/v5/logger"
 	maddr "go-micro.dev/v5/util/addr"
@@ -62,11 +63,17 @@ func (h *httpTransport) Dial(addr string, opts ...DialOption) (Client, error) {
 		config.NextProtos = []string{"http/1.1"}
 
 		conn, err = newConn(func(addr string) (net.Conn, error) {
-			return tls.DialWithDialer(&net.Dialer{Timeout: dopts.Timeout}, "tcp", addr, config)
+			return tls.DialWithDialer(&net.Dialer{
+				Timeout:   dopts.Timeout,
+				KeepAlive: 30 * time.Second,
+			}, "tcp", addr, config)
 		})(addr)
 	} else {
 		conn, err = newConn(func(addr string) (net.Conn, error) {
-			return net.DialTimeout("tcp", addr, dopts.Timeout)
+			return (&net.Dialer{
+				Timeout:   dopts.Timeout,
+				KeepAlive: 30 * time.Second,
+			}).Dial("tcp", addr)
 		})(addr)
 	}
 
