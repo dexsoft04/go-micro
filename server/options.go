@@ -75,16 +75,23 @@ type Options struct {
 
 	// The register expiry time
 	RegisterTTL time.Duration
+
+	// Maximum request timeout the server will accept
+	MaxRequestTimeout time.Duration
+	// Default request timeout if client doesn't specify
+	DefaultRequestTimeout time.Duration
 }
 
 // NewOptions creates new server options.
 func NewOptions(opt ...Option) Options {
 	opts := Options{
-		Codecs:           make(map[string]codec.NewCodec),
-		Metadata:         map[string]string{},
-		RegisterInterval: DefaultRegisterInterval,
-		RegisterTTL:      DefaultRegisterTTL,
-		Logger:           logger.DefaultLogger,
+		Codecs:                make(map[string]codec.NewCodec),
+		Metadata:              map[string]string{},
+		RegisterInterval:      DefaultRegisterInterval,
+		RegisterTTL:           DefaultRegisterTTL,
+		MaxRequestTimeout:     DefaultMaxRequestTimeout,
+		DefaultRequestTimeout: DefaultServerRequestTimeout,
+		Logger:                logger.DefaultLogger,
 	}
 
 	for _, o := range opt {
@@ -302,5 +309,19 @@ func WrapSubscriber(w SubscriberWrapper) Option {
 func ListenOption(option transport.ListenOption) Option {
 	return func(o *Options) {
 		o.ListenOptions = append(o.ListenOptions, option)
+	}
+}
+
+// WithMaxRequestTimeout sets the maximum request timeout the server will accept.
+func WithMaxRequestTimeout(t time.Duration) Option {
+	return func(o *Options) {
+		o.MaxRequestTimeout = t
+	}
+}
+
+// WithDefaultRequestTimeout sets the default request timeout if client doesn't specify one.
+func WithDefaultRequestTimeout(t time.Duration) Option {
+	return func(o *Options) {
+		o.DefaultRequestTimeout = t
 	}
 }

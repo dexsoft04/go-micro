@@ -113,14 +113,9 @@ func (r *rpcClient) call(
 
 	md, ok := metadata.FromContext(ctx)
 	if ok {
-		for k, v := range md {
-			// Don't copy Micro-Topic header, that is used for pub/sub
-			// this is fixes the case when the client uses the same context that
-			// is received in the subscriber.
-			if k == headers.Message {
-				continue
-			}
-
+		// Filter headers to include only those that should be propagated
+		filteredMd := metadata.FilterForwardHeaders(md)
+		for k, v := range filteredMd {
 			msg.Header[k] = v
 		}
 	}
@@ -134,7 +129,15 @@ func (r *rpcClient) call(
 		cTimeout = DefaultConnectionTimeout
 	}
 
-	// set timeout in nanoseconds
+	// Check if context has a deadline and use the shorter timeout
+	if deadline, ok := ctx.Deadline(); ok {
+		remaining := time.Until(deadline)
+		if remaining > 0 && remaining < cTimeout {
+			cTimeout = remaining
+		}
+	}
+
+	// set timeout in nanoseconds for backward compatibility with existing services
 	msg.Header["Timeout"] = fmt.Sprintf("%d", cTimeout)
 	// set the content type for the request
 	msg.Header["Content-Type"] = req.ContentType()
@@ -283,18 +286,9 @@ func (r *rpcClient) grpcCall(
 
 	md, ok := metadata.FromContext(ctx)
 	if ok {
-		for k, v := range md {
-			// Don't copy Micro-Topic header, that is used for pub/sub
-			// this is fixes the case when the client uses the same context that
-			// is received in the subscriber.
-			if k == headers.Message {
-				continue
-			}
-			// Skip hop-by-hop headers that should not be forwarded over RPC transports
-			if strings.EqualFold(k, "Connection") || strings.EqualFold(k, "Proxy-Connection") || strings.EqualFold(k, "Keep-Alive") || strings.EqualFold(k, "Transfer-Encoding") || strings.EqualFold(k, "Upgrade") {
-				continue
-			}
-
+		// Filter headers to include only those that should be propagated
+		filteredMd := metadata.FilterForwardHeaders(md)
+		for k, v := range filteredMd {
 			msg.Header[k] = v
 		}
 	}
@@ -308,7 +302,15 @@ func (r *rpcClient) grpcCall(
 		cTimeout = DefaultConnectionTimeout
 	}
 
-	// set timeout in nanoseconds
+	// Check if context has a deadline and use the shorter timeout
+	if deadline, ok := ctx.Deadline(); ok {
+		remaining := time.Until(deadline)
+		if remaining > 0 && remaining < cTimeout {
+			cTimeout = remaining
+		}
+	}
+
+	// set timeout in nanoseconds for backward compatibility with existing services
 	msg.Header["Timeout"] = fmt.Sprintf("%d", cTimeout)
 	// set the content type for the request
 	msg.Header["Content-Type"] = req.ContentType()
@@ -448,7 +450,9 @@ func (r *rpcClient) stream(ctx context.Context, node *registry.Node, req Request
 
 	md, ok := metadata.FromContext(ctx)
 	if ok {
-		for k, v := range md {
+		// Filter headers to include only those that should be propagated
+		filteredMd := metadata.FilterForwardHeaders(md)
+		for k, v := range filteredMd {
 			msg.Header[k] = v
 		}
 	}
@@ -562,7 +566,9 @@ func (r *rpcClient) grpcStream(ctx context.Context, node *registry.Node, req Req
 
 	md, ok := metadata.FromContext(ctx)
 	if ok {
-		for k, v := range md {
+		// Filter headers to include only those that should be propagated
+		filteredMd := metadata.FilterForwardHeaders(md)
+		for k, v := range filteredMd {
 			msg.Header[k] = v
 		}
 	}

@@ -24,7 +24,7 @@ func GetAdvertiseAddress(port string) string {
 	if addr := os.Getenv("MICRO_SERVER_ADVERTISE"); addr != "" {
 		return addr
 	}
-	
+
 	// Fly.io environment: use IPv6 address
 	if IsFlyEnvironment() {
 		if privateIP := os.Getenv("FLY_PRIVATE_IP"); privateIP != "" {
@@ -35,17 +35,12 @@ func GetAdvertiseAddress(port string) string {
 			return fmt.Sprintf("[%s]:%s", privateIP, port)
 		}
 	}
-	
+
 	return ""
 }
 
 // GetNodeID gets unique node identifier
 func GetNodeID(serviceName, defaultID string) string {
-	if IsFlyEnvironment() {
-		if machineID := os.Getenv("FLY_MACHINE_ID"); machineID != "" {
-			return fmt.Sprintf("%s-%s", serviceName, machineID)
-		}
-	}
 	return fmt.Sprintf("%s-%s", serviceName, defaultID)
 }
 
@@ -54,13 +49,13 @@ func GetNodeMetadata(existing map[string]string) map[string]string {
 	if !IsFlyEnvironment() {
 		return existing
 	}
-	
+
 	// Add Fly.io specific metadata
 	metadata := make(map[string]string)
 	for k, v := range existing {
 		metadata[k] = v
 	}
-	
+
 	// Add Fly.io environment information
 	metadata["platform"] = "fly.io"
 	if machineID := os.Getenv("FLY_MACHINE_ID"); machineID != "" {
@@ -75,14 +70,14 @@ func GetNodeMetadata(existing map[string]string) map[string]string {
 	if privateIP := os.Getenv("FLY_PRIVATE_IP"); privateIP != "" {
 		metadata["private_ip"] = privateIP
 	}
-	
+
 	// Add DNS address as backup
 	if machineID := os.Getenv("FLY_MACHINE_ID"); machineID != "" {
 		if appName := os.Getenv("FLY_APP_NAME"); appName != "" {
 			metadata["dns_address"] = fmt.Sprintf("%s.vm.%s.internal", machineID, appName)
 		}
 	}
-	
+
 	return metadata
 }
 
@@ -91,7 +86,7 @@ func FormatIPv6Address(addr, port string) string {
 	if addr == "" {
 		return ""
 	}
-	
+
 	// Check if it's an IPv6 address (contains colons)
 	if strings.Contains(addr, ":") && !strings.HasPrefix(addr, "[") {
 		if port != "" {
@@ -99,7 +94,7 @@ func FormatIPv6Address(addr, port string) string {
 		}
 		return fmt.Sprintf("[%s]", addr)
 	}
-	
+
 	// IPv4 or already formatted
 	if port != "" {
 		_, existingPort, err := net.SplitHostPort(addr)
@@ -107,7 +102,7 @@ func FormatIPv6Address(addr, port string) string {
 			return fmt.Sprintf("%s:%s", strings.Trim(addr, "[]"), port)
 		}
 	}
-	
+
 	return addr
 }
 
@@ -116,17 +111,17 @@ func ExtractPortFromAddress(addr string) (host, port string, err error) {
 	if addr == "" {
 		return "", "", fmt.Errorf("empty address")
 	}
-	
+
 	return net.SplitHostPort(addr)
 }
 
 // GetFlyEnvironmentInfo returns a map of all Fly.io environment variables
 func GetFlyEnvironmentInfo() map[string]string {
 	info := make(map[string]string)
-	
+
 	flyVars := []string{
 		"FLY_MACHINE_ID",
-		"FLY_PRIVATE_IP", 
+		"FLY_PRIVATE_IP",
 		"FLY_PUBLIC_IP",
 		"FLY_REGION",
 		"FLY_APP_NAME",
@@ -134,13 +129,13 @@ func GetFlyEnvironmentInfo() map[string]string {
 		"FLY_MACHINE_VERSION",
 		"FLY_PROCESS_GROUP",
 	}
-	
+
 	for _, varName := range flyVars {
 		if value := os.Getenv(varName); value != "" {
 			info[varName] = value
 		}
 	}
-	
+
 	return info
 }
 
@@ -151,7 +146,7 @@ func AutoConfigureEnvironment() {
 		if !IsFlyEnvironment() {
 			return
 		}
-		
+
 		// Determine the service port from existing configuration or use default
 		port := "8080"
 		if existingAddr := os.Getenv("MICRO_SERVER_ADDRESS"); existingAddr != "" {
@@ -159,7 +154,7 @@ func AutoConfigureEnvironment() {
 				port = p
 			}
 		}
-		
+
 		// Auto-configure server advertise address if not already set
 		if os.Getenv("MICRO_SERVER_ADVERTISE") == "" {
 			if privateIP := os.Getenv("FLY_PRIVATE_IP"); privateIP != "" {
@@ -167,13 +162,13 @@ func AutoConfigureEnvironment() {
 				os.Setenv("MICRO_SERVER_ADVERTISE", advertiseAddr)
 			}
 		}
-		
+
 		// Auto-configure server bind address if not already set
 		if os.Getenv("MICRO_SERVER_ADDRESS") == "" {
 			// Bind to all IPv6 addresses to accept connections
 			os.Setenv("MICRO_SERVER_ADDRESS", fmt.Sprintf("[::]:%s", port))
 		}
-		
+
 		// Set other useful environment variables for debugging/monitoring
 		if machineID := os.Getenv("FLY_MACHINE_ID"); machineID != "" {
 			if appName := os.Getenv("FLY_APP_NAME"); appName != "" {

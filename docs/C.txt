@@ -7,4 +7,4 @@ file=handler/authapi.go:1046 level=debug AccountLogin header Accept:application/
 file=handler/authapi.go:1046 level=debug AccountLogin header Micro-Namespace:mcbeam
 file=handler/authapi.go:1046 level=debug AccountLogin header Timeout:5000000000
 file=handler/authapi.go:1046 level=debug AccountLogin header Remote:[fdaa:2b:b8d4:a7b:580:cc70:a70c:2]:51460
-file=handler/authapi.go:1046 level=debug AccountLogin header Micro-ID:749
+file=handler/authapi.go:1046 level=d.ebug AccountLogin header Micro-ID:749

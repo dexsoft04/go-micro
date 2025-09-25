@@ -226,9 +226,12 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 		to := msg.Header["Timeout"]
 		// We use this Content-Type header to identify the codec needed
 		contentType := msg.Header["Content-Type"]
-		// Copy the message headers
-		header := make(map[string]string, len(msg.Header))
-		for k, v := range msg.Header {
+		// Filter incoming headers to remove transport-specific headers
+		filtered := metadata.FilterIncomingHeaders(msg.Header)
+
+		// Copy filtered headers
+		header := make(map[string]string, len(filtered))
+		for k, v := range filtered {
 			header[k] = v
 		}
 
@@ -239,14 +242,35 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 		// Create new context with the metadata
 		ctx := metadata.NewContext(context.Background(), header)
 
-		// Set the timeout from the header if we have it
+		// Parse timeout from client header (in nanoseconds)
+		var requestTimeout time.Duration
 		if len(to) > 0 {
 			if n, err := strconv.ParseUint(to, 10, 64); err == nil {
-				var cancel context.CancelFunc
-
-				ctx, cancel = context.WithTimeout(ctx, time.Duration(n))
-				defer cancel()
+				requestTimeout = time.Duration(n)
 			}
+		}
+
+		// Apply server-side timeout constraints
+		if requestTimeout == 0 && s.opts.DefaultRequestTimeout > 0 {
+			requestTimeout = s.opts.DefaultRequestTimeout
+		}
+		if s.opts.MaxRequestTimeout > 0 && requestTimeout > s.opts.MaxRequestTimeout {
+			requestTimeout = s.opts.MaxRequestTimeout
+		}
+
+		// Check if parent context has a deadline and use the shorter timeout
+		if deadline, ok := ctx.Deadline(); ok {
+			remaining := time.Until(deadline)
+			if remaining > 0 && remaining < requestTimeout {
+				requestTimeout = remaining
+			}
+		}
+
+		// Set the final timeout
+		if requestTimeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, requestTimeout)
+			defer cancel()
 		}
 
 		// If there's no content type default it
@@ -528,7 +552,7 @@ func (s *rpcServer) Start() error {
 
 	exit := make(chan bool)
 
-	// Listen for connections
+	// Listen for connections === WithServerUid node:
 	go s.listen(listener, exit)
 
 	// Keep the service registered to registry

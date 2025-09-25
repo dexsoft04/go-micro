@@ -191,7 +191,7 @@ func (g *grpcClient) stream(ctx context.Context, node *registry.Node, req client
 	if md, ok := metadata.FromContext(ctx); ok {
 		header = make(map[string]string, len(md))
 		for k, v := range md {
-			header[k] = v
+			header[strings.ToLower(k)] = v
 		}
 	} else {
 		header = make(map[string]string)

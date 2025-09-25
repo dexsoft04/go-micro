@@ -236,10 +236,13 @@ func (g *grpcServer) handler(srv interface{}, stream grpc.ServerStream) error {
 	}
 
 	// copy the metadata to go-micro.metadata
-	md := meta.Metadata{}
+	rawMd := meta.Metadata{}
 	for k, v := range gmd {
-		md[k] = strings.Join(v, ", ")
+		rawMd[k] = strings.Join(v, ", ")
 	}
+
+	// filter incoming headers to remove transport-specific headers
+	md := meta.FilterIncomingHeaders(rawMd)
 
 	// timeout for server deadline
 	to := md["timeout"]
@@ -266,13 +269,35 @@ func (g *grpcServer) handler(srv interface{}, stream grpc.ServerStream) error {
 		ctx = peer.NewContext(ctx, p)
 	}
 
-	// set the timeout if we have it
+	// Parse timeout from client metadata (in nanoseconds)
+	var requestTimeout time.Duration
 	if len(to) > 0 {
 		if n, err := strconv.ParseUint(to, 10, 64); err == nil {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(ctx, time.Duration(n))
-			defer cancel()
+			requestTimeout = time.Duration(n)
 		}
+	}
+
+	// Apply server-side timeout constraints
+	if requestTimeout == 0 && g.opts.DefaultRequestTimeout > 0 {
+		requestTimeout = g.opts.DefaultRequestTimeout
+	}
+	if g.opts.MaxRequestTimeout > 0 && requestTimeout > g.opts.MaxRequestTimeout {
+		requestTimeout = g.opts.MaxRequestTimeout
+	}
+
+	// Check if parent context has a deadline and use the shorter timeout
+	if deadline, ok := ctx.Deadline(); ok {
+		remaining := time.Until(deadline)
+		if remaining > 0 && remaining < requestTimeout {
+			requestTimeout = remaining
+		}
+	}
+
+	// Set the final timeout
+	if requestTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, requestTimeout)
+		defer cancel()
 	}
 
 	// process via router

@@ -148,6 +148,11 @@ var (
 	DefaultRegisterInterval        = time.Second * 30
 	DefaultRegisterTTL             = time.Second * 90
 
+	// DefaultMaxRequestTimeout is the default maximum request timeout
+	DefaultMaxRequestTimeout = time.Second * 60
+	// DefaultServerRequestTimeout is the default timeout if client doesn't specify
+	DefaultServerRequestTimeout = time.Second * 30
+
 	// NewServer creates a new server.
 	NewServer func(...Option) Server = NewRPCServer
 )
