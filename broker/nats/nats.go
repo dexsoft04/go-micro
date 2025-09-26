@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	natsp "github.com/nats-io/nats.go"
 	"go-micro.dev/v5/broker"
@@ -243,7 +244,7 @@ func (n *natsBroker) Subscribe(topic string, handler broker.Handler, opts ...bro
 
 		// set topic information
 		m.Header["Micro-Topic"] = msg.Subject
-		
+
 		// extract information from NATS message headers (if any)
 		if msg.Header != nil {
 			for k, v := range msg.Header {
@@ -274,6 +275,22 @@ func (n *natsBroker) Subscribe(topic string, handler broker.Handler, opts ...bro
 	n.RUnlock()
 	if err != nil {
 		return nil, err
+	}
+
+	// Ensure the server has processed the subscription so it appears in /subsz
+	// Use a context deadline if provided, otherwise a small default timeout.
+	if deadline, ok := opt.Context.Deadline(); ok {
+		to := time.Until(deadline)
+		if to <= 0 {
+			to = time.Second
+		}
+		if err = n.conn.FlushTimeout(to); err != nil {
+			return nil, err
+		}
+	} else {
+		if err = n.conn.FlushTimeout(2 * time.Second); err != nil {
+			return nil, err
+		}
 	}
 	return &subscriber{s: sub, opts: opt}, nil
 }
