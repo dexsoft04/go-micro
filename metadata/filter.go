@@ -49,6 +49,10 @@ var tracingHeaders = map[string]bool{
 	"uber-trace-id":     true,
 	"jaeger-debug-id":   true,
 	"jaeger-baggage":    true,
+	// W3C Trace Context
+	"traceparent": true,
+	"tracestate":  true,
+	"baggage":     true,
 }
 
 // WebSocket session headers that should be preserved for WebSocket-based services
