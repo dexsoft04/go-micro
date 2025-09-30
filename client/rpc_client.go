@@ -103,10 +103,6 @@ func (r *rpcClient) call(
 	address := node.Address
 	logger := r.Options().Logger
 
-	// Log call initiation
-	log.Tracef("call: initiated HTTP call to service=%s endpoint=%s node=%s address=%s",
-		req.Service(), req.Endpoint(), node.Id, address)
-
 	msg := &transport.Message{
 		Header: make(map[string]string),
 	}
@@ -147,9 +143,6 @@ func (r *rpcClient) call(
 	msg.Header["Content-Type"] = req.ContentType()
 	// set the accept header
 	msg.Header["Accept"] = req.ContentType()
-
-	// Log Content-Type processing for HTTP call
-	log.Tracef("call: HTTP request Method=%s Content-Type=%s Accept=%s", req.Method(), req.ContentType(), req.ContentType())
 
 	// setup old protocol
 	reqCodec := setupProtocol(msg, node)
@@ -280,10 +273,6 @@ func (r *rpcClient) grpcCall(
 	address := node.Address
 	logger := r.Options().Logger
 
-	// Log gRPC call initiation
-	log.Tracef("grpcCall: initiated gRPC call to service=%s endpoint=%s node=%s address=%s",
-		req.Service(), req.Endpoint(), node.Id, address)
-
 	msg := &transport.Message{
 		Header: make(map[string]string),
 	}
@@ -324,9 +313,6 @@ func (r *rpcClient) grpcCall(
 	msg.Header["Content-Type"] = req.ContentType()
 	// set the accept header
 	msg.Header["Accept"] = req.ContentType()
-
-	// Log Content-Type processing for gRPC call
-	log.Tracef("grpcCall: gRPC request Method=%s Content-Type=%s Accept=%s", req.Method(), req.ContentType(), req.ContentType())
 
 	// setup old protocol
 	reqCodec := setupProtocol(msg, node)
@@ -415,7 +401,6 @@ func (r *rpcClient) grpcCall(
 			return
 		}
 
-		//logger.Logf(log.TraceLevel, "recv stream Method %s %T stream:%T", req.Method(), resp, stream)
 		// recv response
 		if err := stream.Recv(resp); err != nil {
 			//logger.Logf(log.TraceLevel, "failed to recv stream %v %s", err, string(debug.Stack()))
@@ -851,9 +836,8 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 			}
 		}
 
-		log.Tracef("proxyCall: service=%s node=%s transport=%s protocol=%s server=%s registry=%s broker=%s source=%s",
-			req.Service(), node.Id, ts, node.Metadata["protocol"], node.Metadata["server"], node.Metadata["registry"], node.Metadata["broker"], source)
-
+		log.Tracef("proxyCall: service=%s method=%s node_id=%s transport=%s protocol=%s server=%s registry=%s broker=%s Content-Type=%s source=%s",
+			req.Service(), req.Method(), node.Id, ts, node.Metadata["protocol"], node.Metadata["server"], node.Metadata["registry"], node.Metadata["broker"], req.ContentType(), source)
 		switch ts {
 		case "grpc":
 			err = r.grpcCall(ctx, node, req, resp, opts)
@@ -867,7 +851,6 @@ func (r *rpcClient) Call(ctx context.Context, request Request, response interfac
 					req.Service(), req.Endpoint(), node.Id, node.Address, err)
 			}
 		default:
-			log.Infof("proxyCall: service=%s node=%s transport=%s source=%s", req.Service(), node.Id, ts, source)
 			err = r.grpcCall(ctx, node, req, resp, opts)
 			if ts == "" && err != nil {
 				log.Tracef("proxyCall: gRPC call failed, switching to HTTP for %s: %v", req.Service(), err)

@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pressure Test Real-Time Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 0 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .metric-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .metric-card h3 {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #ffd700;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2.5em;
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .metric-unit {
+            font-size: 0.8em;
+            color: #ccc;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin: 15px 0;
+        }
+
+        .large-chart {
+            height: 300px;
+        }
+
+        .service-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .service-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .service-item:last-child {
+            border-bottom: none;
+        }
+
+        .error-high {
+            color: #ff6b6b;
+        }
+
+        .performance-good {
+            color: #4CAF50;
+        }
+
+        .performance-warning {
+            color: #FFA726;
+        }
+
+        .performance-critical {
+            color: #f44336;
+        }
+
+        .alert-panel {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid #f44336;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .alert-panel h4 {
+            color: #f44336;
+            margin-bottom: 10px;
+        }
+
+        .refresh-info {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><span class="status-indicator"></span>Pressure Test Dashboard</h1>
+        <p id="current-time">Loading...</p>
+        <div class="controls">
+            <button class="btn" onclick="toggleAutoRefresh()">Auto Refresh: ON</button>
+            <button class="btn" onclick="refreshData()">Refresh Now</button>
+            <button class="btn" onclick="resetCharts()">Reset Charts</button>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <!-- Overall Metrics -->
+        <div class="metric-card">
+            <h3>📊 Overall QPS</h3>
+            <div class="metric-value" id="overall-qps">0<span class="metric-unit"> req/s</span></div>
+            <div class="chart-container">
+                <canvas id="qpsChart"></canvas>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <h3>⏱️ Average Latency</h3>
+            <div class="metric-value" id="avg-latency">0<span class="metric-unit"> ms</span></div>
+            <div class="chart-container">
+                <canvas id="latencyChart"></canvas>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <h3>❌ Error Rate</h3>
+            <div class="metric-value" id="error-rate">0<span class="metric-unit"> %</span></div>
+            <div class="chart-container">
+                <canvas id="errorChart"></canvas>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <h3>📈 Total Requests</h3>
+            <div class="metric-value" id="total-requests">0</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="request-progress"></div>
+            </div>
+            <p style="text-align: center; margin-top: 10px;">Test Progress</p>
+        </div>
+
+        <!-- Response Time Distribution -->
+        <div class="metric-card" style="grid-column: span 2;">
+            <h3>⚡ Response Time Distribution</h3>
+            <div class="chart-container large-chart">
+                <canvas id="distributionChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Service Performance -->
+        <div class="metric-card">
+            <h3>🔧 Service Performance</h3>
+            <div class="service-list" id="service-performance">
+                <div class="service-item">
+                    <span>Loading services...</span>
+                    <span>--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Slow Operations -->
+        <div class="metric-card">
+            <h3>🐌 Slowest Operations</h3>
+            <div class="service-list" id="slow-operations">
+                <div class="service-item">
+                    <span>Loading operations...</span>
+                    <span>--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Resources -->
+        <div class="metric-card">
+            <h3>💻 System Resources</h3>
+            <div style="margin: 10px 0;">
+                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                    <span>CPU Usage:</span>
+                    <span id="cpu-usage">--</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                    <span>Memory Usage:</span>
+                    <span id="memory-usage">--</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                    <span>Active Connections:</span>
+                    <span id="active-connections">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Timeline -->
+        <div class="metric-card" style="grid-column: span 3;">
+            <h3>📊 Performance Timeline</h3>
+            <div class="chart-container large-chart">
+                <canvas id="timelineChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Alerts Panel -->
+        <div class="metric-card" id="alerts-panel" style="display: none;">
+            <div class="alert-panel">
+                <h4>🚨 Performance Alerts</h4>
+                <div id="alerts-list">
+                    <!-- Alerts will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="refresh-info">
+        Auto-refresh: <span id="refresh-status">Every 2s</span> |
+        Last update: <span id="last-update">Never</span>
+    </div>
+
+    <script>
+        // Global configuration
+        let autoRefresh = true;
+        let refreshInterval = 2000; // 2 seconds
+        let refreshTimer;
+        let charts = {};
+        let dataHistory = {
+            qps: [],
+            latency: [],
+            errors: [],
+            timestamps: []
+        };
+        let maxDataPoints = 50;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            startAutoRefresh();
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+        });
+
+        function updateCurrentTime() {
+            document.getElementById('current-time').textContent = new Date().toLocaleString();
+        }
+
+        function initializeCharts() {
+            // QPS Chart
+            charts.qps = new Chart(document.getElementById('qpsChart'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'QPS',
+                        data: [],
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true },
+                        x: { display: false }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Latency Chart
+            charts.latency = new Chart(document.getElementById('latencyChart'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Avg Latency (ms)',
+                        data: [],
+                        borderColor: '#2196F3',
+                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true },
+                        x: { display: false }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Error Chart
+            charts.error = new Chart(document.getElementById('errorChart'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Error Rate (%)',
+                        data: [],
+                        borderColor: '#f44336',
+                        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 100 },
+                        x: { display: false }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Response Time Distribution Chart
+            charts.distribution = new Chart(document.getElementById('distributionChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['<10ms', '10-50ms', '50-100ms', '100-500ms', '>500ms'],
+                    datasets: [{
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: [
+                            '#4CAF50',
+                            '#8BC34A',
+                            '#FFC107',
+                            '#FF9800',
+                            '#f44336'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: 'white' }
+                        }
+                    }
+                }
+            });
+
+            // Timeline Chart
+            charts.timeline = new Chart(document.getElementById('timelineChart'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'QPS',
+                            data: [],
+                            borderColor: '#4CAF50',
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Avg Latency (ms)',
+                            data: [],
+                            borderColor: '#2196F3',
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: 'Error Rate (%)',
+                            data: [],
+                            borderColor: '#f44336',
+                            yAxisID: 'y2'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false },
+                    scales: {
+                        x: { display: true },
+                        y: { type: 'linear', display: true, position: 'left' },
+                        y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false } },
+                        y2: { type: 'linear', display: false }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: 'white' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function startAutoRefresh() {
+            if (autoRefresh) {
+                refreshTimer = setInterval(refreshData, refreshInterval);
+            }
+        }
+
+        function stopAutoRefresh() {
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+                refreshTimer = null;
+            }
+        }
+
+        function toggleAutoRefresh() {
+            autoRefresh = !autoRefresh;
+            const btn = document.querySelector('.btn');
+            btn.textContent = `Auto Refresh: ${autoRefresh ? 'ON' : 'OFF'}`;
+
+            if (autoRefresh) {
+                startAutoRefresh();
+                document.getElementById('refresh-status').textContent = 'Every 2s';
+            } else {
+                stopAutoRefresh();
+                document.getElementById('refresh-status').textContent = 'OFF';
+            }
+        }
+
+        async function refreshData() {
+            try {
+                // In a real implementation, this would fetch data from the monitoring script
+                // For demo purposes, we'll simulate data
+                const data = await fetchMonitoringData();
+                updateDashboard(data);
+                document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+            } catch (error) {
+                console.error('Failed to refresh data:', error);
+            }
+        }
+
+        // Simulate data fetching (in real implementation, this would call your monitoring API)
+        async function fetchMonitoringData() {
+            // Simulate API call delay
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Generate random data for demonstration
+            const currentTime = new Date();
+            const qps = Math.floor(Math.random() * 200) + 50;
+            const latency = Math.floor(Math.random() * 100) + 20;
+            const errorRate = Math.random() * 5;
+
+            return {
+                qps: qps,
+                avgLatency: latency,
+                errorRate: errorRate,
+                totalRequests: Math.floor(Math.random() * 10000) + 5000,
+                responseDistribution: [
+                    Math.floor(Math.random() * 30) + 20, // <10ms
+                    Math.floor(Math.random() * 25) + 15, // 10-50ms
+                    Math.floor(Math.random() * 20) + 10, // 50-100ms
+                    Math.floor(Math.random() * 15) + 5,  // 100-500ms
+                    Math.floor(Math.random() * 10)       // >500ms
+                ],
+                services: [
+                    { name: 'user-service', latency: Math.floor(Math.random() * 50) + 10, qps: Math.floor(Math.random() * 50) + 10 },
+                    { name: 'order-service', latency: Math.floor(Math.random() * 80) + 15, qps: Math.floor(Math.random() * 40) + 8 },
+                    { name: 'payment-service', latency: Math.floor(Math.random() * 60) + 12, qps: Math.floor(Math.random() * 30) + 5 }
+                ],
+                slowOperations: [
+                    { name: 'order.CreateOrder', latency: Math.floor(Math.random() * 200) + 100 },
+                    { name: 'payment.ProcessPayment', latency: Math.floor(Math.random() * 150) + 80 },
+                    { name: 'user.ValidateUser', latency: Math.floor(Math.random() * 100) + 50 }
+                ],
+                timestamp: currentTime.toLocaleTimeString()
+            };
+        }
+
+        function updateDashboard(data) {
+            // Update main metrics
+            document.getElementById('overall-qps').innerHTML = `${data.qps}<span class="metric-unit"> req/s</span>`;
+            document.getElementById('avg-latency').innerHTML = `${data.avgLatency}<span class="metric-unit"> ms</span>`;
+            document.getElementById('error-rate').innerHTML = `${data.errorRate.toFixed(2)}<span class="metric-unit"> %</span>`;
+            document.getElementById('total-requests').textContent = data.totalRequests.toLocaleString();
+
+            // Update progress bar (simulate test progress)
+            const progress = Math.min((data.totalRequests / 10000) * 100, 100);
+            document.getElementById('request-progress').style.width = `${progress}%`;
+
+            // Update charts with new data
+            updateChartsData(data);
+
+            // Update service performance
+            updateServicePerformance(data.services);
+
+            // Update slow operations
+            updateSlowOperations(data.slowOperations);
+
+            // Update system resources (simulated)
+            updateSystemResources();
+
+            // Check for alerts
+            checkAlerts(data);
+        }
+
+        function updateChartsData(data) {
+            const timestamp = data.timestamp;
+
+            // Add new data point
+            dataHistory.qps.push(data.qps);
+            dataHistory.latency.push(data.avgLatency);
+            dataHistory.errors.push(data.errorRate);
+            dataHistory.timestamps.push(timestamp);
+
+            // Keep only last N data points
+            if (dataHistory.qps.length > maxDataPoints) {
+                dataHistory.qps.shift();
+                dataHistory.latency.shift();
+                dataHistory.errors.shift();
+                dataHistory.timestamps.shift();
+            }
+
+            // Update individual charts
+            updateChart(charts.qps, dataHistory.timestamps, dataHistory.qps);
+            updateChart(charts.latency, dataHistory.timestamps, dataHistory.latency);
+            updateChart(charts.error, dataHistory.timestamps, dataHistory.errors);
+
+            // Update distribution chart
+            charts.distribution.data.datasets[0].data = data.responseDistribution;
+            charts.distribution.update();
+
+            // Update timeline chart
+            charts.timeline.data.labels = dataHistory.timestamps;
+            charts.timeline.data.datasets[0].data = dataHistory.qps;
+            charts.timeline.data.datasets[1].data = dataHistory.latency;
+            charts.timeline.data.datasets[2].data = dataHistory.errors;
+            charts.timeline.update();
+        }
+
+        function updateChart(chart, labels, data) {
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = data;
+            chart.update();
+        }
+
+        function updateServicePerformance(services) {
+            const container = document.getElementById('service-performance');
+            container.innerHTML = '';
+
+            services.forEach(service => {
+                const item = document.createElement('div');
+                item.className = 'service-item';
+
+                const performanceClass = service.latency > 100 ? 'performance-critical' :
+                                       service.latency > 50 ? 'performance-warning' : 'performance-good';
+
+                item.innerHTML = `
+                    <span>${service.name}</span>
+                    <span class="${performanceClass}">${service.latency}ms (${service.qps} QPS)</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function updateSlowOperations(operations) {
+            const container = document.getElementById('slow-operations');
+            container.innerHTML = '';
+
+            operations.forEach((op, index) => {
+                const item = document.createElement('div');
+                item.className = 'service-item';
+
+                const performanceClass = op.latency > 150 ? 'performance-critical' : 'performance-warning';
+
+                item.innerHTML = `
+                    <span>${index + 1}. ${op.name}</span>
+                    <span class="${performanceClass}">${op.latency}ms</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function updateSystemResources() {
+            // Simulate system resource data
+            const cpuUsage = Math.floor(Math.random() * 30) + 20;
+            const memoryUsage = Math.floor(Math.random() * 40) + 30;
+            const connections = Math.floor(Math.random() * 100) + 200;
+
+            document.getElementById('cpu-usage').textContent = `${cpuUsage}%`;
+            document.getElementById('memory-usage').textContent = `${memoryUsage}%`;
+            document.getElementById('active-connections').textContent = connections;
+        }
+
+        function checkAlerts(data) {
+            const alerts = [];
+
+            if (data.errorRate > 5) {
+                alerts.push(`High error rate detected: ${data.errorRate.toFixed(2)}%`);
+            }
+
+            if (data.avgLatency > 100) {
+                alerts.push(`High average latency detected: ${data.avgLatency}ms`);
+            }
+
+            if (data.qps < 10) {
+                alerts.push(`Low QPS detected: ${data.qps} req/s`);
+            }
+
+            const alertsPanel = document.getElementById('alerts-panel');
+            const alertsList = document.getElementById('alerts-list');
+
+            if (alerts.length > 0) {
+                alertsPanel.style.display = 'block';
+                alertsList.innerHTML = alerts.map(alert => `<div>• ${alert}</div>`).join('');
+            } else {
+                alertsPanel.style.display = 'none';
+            }
+        }
+
+        function resetCharts() {
+            dataHistory = {
+                qps: [],
+                latency: [],
+                errors: [],
+                timestamps: []
+            };
+
+            Object.values(charts).forEach(chart => {
+                chart.data.labels = [];
+                chart.data.datasets.forEach(dataset => {
+                    dataset.data = [];
+                });
+                chart.update();
+            });
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            Object.values(charts).forEach(chart => {
+                chart.resize();
+            });
+        });
+    </script>
+</body>
+</html>

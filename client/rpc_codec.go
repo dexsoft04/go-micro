@@ -279,8 +279,7 @@ func (c *rpcCodec) ReadHeader(msg *codec.Message, r codec.MessageType) error {
 	msg.Header = tm.Header
 
 	// Log received headers for debugging
-	logger.Tracef("ReadHeader: received headers - %+v", tm.Header)
-	logger.Tracef("ReadHeader: message body length - %d bytes", len(tm.Body))
+	logger.Tracef("ReadHeader: received headers - %+v %d bytes", tm.Header, len(tm.Body))
 
 	// read header
 	err := c.codec.ReadHeader(msg, r)

@@ -180,11 +180,25 @@ func (n *natsBroker) Publish(topic string, msg *broker.Message, opts ...broker.P
 		return errors.New("not connected")
 	}
 
+	// DEBUG: Log publish details
+	n.opts.Logger.Logf(logger.InfoLevel, "[NATS-PUBLISH] Topic: %s, BodySize: %d, ContentType: %s",
+		topic, len(msg.Body), msg.Header["Content-Type"])
+
 	b, err := n.opts.Codec.Marshal(msg)
 	if err != nil {
+		n.opts.Logger.Logf(logger.ErrorLevel, "[NATS-MARSHAL-ERROR] Topic: %s, Error: %v", topic, err)
 		return err
 	}
-	return n.conn.Publish(topic, b)
+
+	n.opts.Logger.Logf(logger.InfoLevel, "[NATS-MARSHAL-OK] Topic: %s, MarshaledSize: %d", topic, len(b))
+
+	if err := n.conn.Publish(topic, b); err != nil {
+		n.opts.Logger.Logf(logger.ErrorLevel, "[NATS-PUBLISH-ERROR] Topic: %s, Error: %v", topic, err)
+		return err
+	}
+
+	n.opts.Logger.Logf(logger.InfoLevel, "[NATS-PUBLISH-OK] Topic: %s", topic)
+	return nil
 }
 
 func (n *natsBroker) Subscribe(topic string, handler broker.Handler, opts ...broker.SubscribeOption) (broker.Subscriber, error) {
@@ -209,6 +223,10 @@ func (n *natsBroker) Subscribe(topic string, handler broker.Handler, opts ...bro
 		pub := &publication{t: msg.Subject}
 		eh := n.opts.ErrorHandler
 
+		// DEBUG: Log incoming NATS message
+		n.opts.Logger.Logf(logger.InfoLevel, "[NATS-RECV] Subject: %s, DataSize: %d, HasHeader: %v",
+			msg.Subject, len(msg.Data), msg.Header != nil)
+
 		// decode the message received from NATS
 		// the publisher uses Codec.Marshal to encode the entire broker.Message, so we need to decode it here
 		err := n.opts.Codec.Unmarshal(msg.Data, &m)
@@ -230,12 +248,17 @@ func (n *natsBroker) Subscribe(topic string, handler broker.Handler, opts ...bro
 				}
 			}
 
-			n.opts.Logger.Log(logger.ErrorLevel, err)
+			n.opts.Logger.Logf(logger.ErrorLevel, "[NATS-DECODE-ERROR] Subject: %s, Error: %v, DataPreview: %s",
+				msg.Subject, err, string(msg.Data[:min(100, len(msg.Data))]))
 			if eh != nil {
 				eh(pub)
 			}
 			return
 		}
+
+		// DEBUG: Log successful decode
+		n.opts.Logger.Logf(logger.InfoLevel, "[NATS-DECODE-OK] Subject: %s, BodySize: %d, ContentType: %s",
+			msg.Subject, len(m.Body), m.Header["Content-Type"])
 
 		// ensure message header exists
 		if m.Header == nil {
