@@ -113,9 +113,13 @@ func (r *rpcClient) call(
 
 	md, ok := metadata.FromContext(ctx)
 	if ok {
-		// Filter headers to include only those that should be propagated
-		filteredMd := metadata.FilterForwardHeaders(md)
+		// Filter out framework control headers only
+		// Application-level filtering should be done at API gateway
+		filteredMd := metadata.FilterFrameworkHeaders(md)
 		for k, v := range filteredMd {
+			if k == headers.Message {
+				continue
+			}
 			msg.Header[k] = v
 		}
 	}
@@ -286,9 +290,13 @@ func (r *rpcClient) grpcCall(
 
 	md, ok := metadata.FromContext(ctx)
 	if ok {
-		// Filter headers to include only those that should be propagated
-		filteredMd := metadata.FilterForwardHeaders(md)
+		// Filter out framework control headers only
+		// Application-level filtering should be done at API gateway
+		filteredMd := metadata.FilterFrameworkHeaders(md)
 		for k, v := range filteredMd {
+			if k == headers.Message {
+				continue
+			}
 			msg.Header[k] = v
 		}
 	}
@@ -450,8 +458,9 @@ func (r *rpcClient) stream(ctx context.Context, node *registry.Node, req Request
 
 	md, ok := metadata.FromContext(ctx)
 	if ok {
-		// Filter headers to include only those that should be propagated
-		filteredMd := metadata.FilterForwardHeaders(md)
+		// Filter out framework control headers only
+		// Application-level filtering should be done at API gateway
+		filteredMd := metadata.FilterFrameworkHeaders(md)
 		for k, v := range filteredMd {
 			msg.Header[k] = v
 		}
@@ -566,8 +575,9 @@ func (r *rpcClient) grpcStream(ctx context.Context, node *registry.Node, req Req
 
 	md, ok := metadata.FromContext(ctx)
 	if ok {
-		// Filter headers to include only those that should be propagated
-		filteredMd := metadata.FilterForwardHeaders(md)
+		// Filter out framework control headers only
+		// Application-level filtering should be done at API gateway
+		filteredMd := metadata.FilterFrameworkHeaders(md)
 		for k, v := range filteredMd {
 			msg.Header[k] = v
 		}

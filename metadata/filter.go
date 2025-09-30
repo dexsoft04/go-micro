@@ -6,7 +6,20 @@ import (
 	"go-micro.dev/v5/transport/headers"
 )
 
-// HTTP hop-by-hop headers that should not be forwarded
+// Framework internal control headers that should not be propagated between services.
+// These headers are set by the framework for each RPC call and describe the current call,
+// not the original call chain.
+var frameworkControlHeaders = map[string]bool{
+	"micro-service":  true, // Target service name for current call
+	"micro-method":   true, // Target method name for current call
+	"micro-endpoint": true, // Target endpoint for current call
+	"micro-id":       true, // Request ID for current call
+	"micro-protocol": true, // Protocol negotiation for current call
+	"micro-target":   true, // Target address for current call
+}
+
+// HTTP hop-by-hop headers that should not be forwarded between services.
+// These are connection-specific and must not be propagated.
 var hopByHopHeaders = map[string]bool{
 	"connection":          true,
 	"proxy-connection":    true,
@@ -19,133 +32,55 @@ var hopByHopHeaders = map[string]bool{
 	"trailer":             true,
 }
 
-// Server-local headers that should not be forwarded to downstream services
+// Server-local headers that contain connection-specific information.
+// These should not be forwarded to downstream services.
 var serverLocalHeaders = map[string]bool{
-	"local":  true,
-	"remote": true,
+	"local":  true, // Local endpoint address
+	"remote": true, // Remote client address
 }
 
-// Framework internal control headers that should not be propagated
-var frameworkControlHeaders = map[string]bool{
-	"micro-service":  true,
-	"micro-method":   true,
-	"micro-endpoint": true,
-	"micro-id":       true,
-	"micro-protocol": true,
-	"micro-target":   true,
-}
-
-// Headers that should be preserved for tracing and monitoring
-var tracingHeaders = map[string]bool{
-	"x-request-id":      true,
-	"x-correlation-id":  true,
-	"x-trace-id":        true,
-	"x-span-id":         true,
-	"x-b3-traceid":      true,
-	"x-b3-spanid":       true,
-	"x-b3-parentspanid": true,
-	"x-b3-sampled":      true,
-	"x-b3-flags":        true,
-	"uber-trace-id":     true,
-	"jaeger-debug-id":   true,
-	"jaeger-baggage":    true,
-	// W3C Trace Context
-	"traceparent": true,
-	"tracestate":  true,
-	"baggage":     true,
-}
-
-// WebSocket session headers that should be preserved for WebSocket-based services
-var websocketHeaders = map[string]bool{
-	"micro-ws-session-id": true,
-	"micro-ws-server-id":  true,
-}
-
-// Authentication and authorization headers that should be preserved
-var authHeaders = map[string]bool{
-	"authorization":      true,
-	"x-api-key":          true,
-	"x-auth-token":       true,
-	"user-token":         true,
-	"user-authorization": true,
-	"igs-user-id":        true,
-}
-
-// ShouldPropagate checks if a header should be propagated to downstream services
-func ShouldPropagate(key string) bool {
+// ShouldFilterFrameworkHeader checks if a header is a framework control header
+// that should be filtered out when forwarding to downstream services.
+// Returns true if the header should be filtered (not propagated).
+func ShouldFilterFrameworkHeader(key string) bool {
 	keyLower := strings.ToLower(key)
 
-	// Always filter out hop-by-hop headers
+	// Filter hop-by-hop headers (HTTP standard)
 	if hopByHopHeaders[keyLower] {
-		return false
+		return true
 	}
 
-	// Always filter out server-local headers
+	// Filter server-local headers (connection-specific)
 	if serverLocalHeaders[keyLower] {
-		return false
+		return true
 	}
 
-	// Always filter out framework control headers
+	// Filter framework control headers (RPC call-specific)
 	if frameworkControlHeaders[keyLower] {
-		return false
+		return true
 	}
 
-	// Skip Micro-Topic header used for pub/sub
+	// Filter Micro-Topic header (pub/sub specific, should not leak to RPC calls)
 	if keyLower == strings.ToLower(headers.Message) {
-		return false
-	}
-
-	// Always preserve tracing headers
-	if tracingHeaders[keyLower] {
 		return true
 	}
 
-	// Always preserve WebSocket session headers
-	if websocketHeaders[keyLower] {
-		return true
-	}
-
-	// Always preserve auth headers
-	if authHeaders[keyLower] {
-		return true
-	}
-
-	// Preserve content-type and accept headers
-	if keyLower == "content-type" || keyLower == "accept" {
-		return true
-	}
-
-	// Preserve custom business headers (not starting with known system prefixes)
-	if !strings.HasPrefix(keyLower, "micro-") &&
-		!strings.HasPrefix(keyLower, "x-forwarded-") &&
-		!strings.HasPrefix(keyLower, "x-real-") {
-		return true
-	}
-
-	// Preserve Micro-Namespace if present (may be needed for routing)
-	if keyLower == strings.ToLower(headers.Namespace) {
-		return true
-	}
-
-	// Preserve trace-related Micro headers
-	if keyLower == strings.ToLower(headers.SpanID) || keyLower == strings.ToLower(headers.TraceIDKey) {
-		return true
-	}
-
-	// Default: don't propagate unknown Micro- prefixed headers
+	// Don't filter anything else - let application layer decide
 	return false
 }
 
-// FilterForwardHeaders filters metadata to include only headers that should be
-// propagated to downstream services in a call chain
-func FilterForwardHeaders(md Metadata) Metadata {
+// FilterFrameworkHeaders removes framework control headers from metadata.
+// This is the minimal filtering that the framework layer should perform.
+// Application-level filtering (auth, tracing, business headers) should be done
+// at the API gateway/entry point, not in the framework.
+func FilterFrameworkHeaders(md Metadata) Metadata {
 	if md == nil {
 		return nil
 	}
 
 	filtered := make(Metadata)
 	for key, value := range md {
-		if ShouldPropagate(key) {
+		if !ShouldFilterFrameworkHeader(key) {
 			filtered[key] = value
 		}
 	}
@@ -154,7 +89,8 @@ func FilterForwardHeaders(md Metadata) Metadata {
 }
 
 // FilterIncomingHeaders filters incoming metadata to remove headers that should
-// not be stored in the service context (e.g., server-generated headers)
+// not be stored in the service context (e.g., hop-by-hop headers).
+// This keeps only transport-layer filtering and preserves all application headers.
 func FilterIncomingHeaders(md Metadata) Metadata {
 	if md == nil {
 		return nil
@@ -164,7 +100,7 @@ func FilterIncomingHeaders(md Metadata) Metadata {
 	for key, value := range md {
 		keyLower := strings.ToLower(key)
 
-		// Skip headers that are only for transport layer
+		// Skip only hop-by-hop headers (transport layer)
 		if hopByHopHeaders[keyLower] {
 			continue
 		}

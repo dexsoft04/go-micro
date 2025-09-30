@@ -6,83 +6,74 @@ import (
 	"go-micro.dev/v5/transport/headers"
 )
 
-func TestShouldPropagate(t *testing.T) {
+func TestShouldFilterFrameworkHeader(t *testing.T) {
 	tests := []struct {
-		name     string
-		key      string
-		expected bool
+		name         string
+		key          string
+		shouldFilter bool // true if header should be filtered (not propagated)
 	}{
-		// Hop-by-hop headers should not propagate
-		{"hop-by-hop Connection", "Connection", false},
-		{"hop-by-hop Keep-Alive", "Keep-Alive", false},
-		{"hop-by-hop case insensitive", "connection", false},
-		{"hop-by-hop Transfer-Encoding", "Transfer-Encoding", false},
+		// Hop-by-hop headers should be filtered
+		{"hop-by-hop Connection", "Connection", true},
+		{"hop-by-hop Keep-Alive", "Keep-Alive", true},
+		{"hop-by-hop case insensitive", "connection", true},
+		{"hop-by-hop Transfer-Encoding", "Transfer-Encoding", true},
 
-		// Server-local headers should not propagate
-		{"server-local Local", "Local", false},
-		{"server-local Remote", "Remote", false},
-		{"server-local case insensitive", "local", false},
+		// Server-local headers should be filtered
+		{"server-local Local", "Local", true},
+		{"server-local Remote", "Remote", true},
+		{"server-local case insensitive", "local", true},
 
-		// Framework control headers should not propagate
-		{"framework Micro-Service", "Micro-Service", false},
-		{"framework Micro-Method", "Micro-Method", false},
-		{"framework case insensitive", "micro-service", false},
+		// Framework control headers should be filtered
+		{"framework Micro-Service", "Micro-Service", true},
+		{"framework Micro-Method", "Micro-Method", true},
+		{"framework case insensitive", "micro-service", true},
+		{"framework Micro-ID", "Micro-ID", true},
+		{"framework Micro-Protocol", "Micro-Protocol", true},
+		{"framework Micro-Target", "Micro-Target", true},
 
-		// Micro-Topic should not propagate (pub/sub)
-		{headers.Message, headers.Message, false},
+		// Micro-Topic should be filtered (pub/sub)
+		{headers.Message, headers.Message, true},
 
-		// Tracing headers should propagate
-		{"tracing X-Request-ID", "X-Request-ID", true},
-		{"tracing X-Trace-ID", "X-Trace-ID", true},
-		{"tracing case insensitive", "x-request-id", true},
-		{"tracing X-B3-TraceId", "X-B3-TraceId", true},
-		{"tracing Uber-Trace-Id", "Uber-Trace-Id", true},
+		// Application headers should NOT be filtered
+		{"tracing X-Request-ID", "X-Request-ID", false},
+		{"tracing X-Trace-ID", "X-Trace-ID", false},
+		{"auth Authorization", "Authorization", false},
+		{"auth X-API-Key", "X-API-Key", false},
+		{"auth User-Token", "User-Token", false},
+		{"content Content-Type", "Content-Type", false},
+		{"content Accept", "Accept", false},
+		{"business X-Custom-Business", "X-Custom-Business", false},
+		{"business User-ID", "User-ID", false},
 
-		// Auth headers should propagate
-		{"auth Authorization", "Authorization", true},
-		{"auth X-API-Key", "X-API-Key", true},
-		{"auth case insensitive", "authorization", true},
-		{"auth User-Token", "User-Token", true},
-		{"auth User-Authorization", "User-Authorization", true},
-		{"auth igs-user-id", "igs-user-id", true},
+		// Client info headers should NOT be filtered (needed for tracing original client)
+		{"client X-Forwarded-For", "X-Forwarded-For", false},
+		{"client X-Real-IP", "X-Real-IP", false},
+		{"client X-Forwarded-Host", "X-Forwarded-Host", false},
 
-		// Content headers should propagate
-		{"content Content-Type", "Content-Type", true},
-		{"content Accept", "Accept", true},
+		// Special Micro headers that should NOT be filtered
+		{"micro namespace", headers.Namespace, false},
+		{"micro span id", headers.SpanID, false},
+		{"micro trace id", headers.TraceIDKey, false},
 
-		// Custom business headers should propagate
-		{"business custom header", "X-Custom-Business", true},
-		{"business User-ID", "User-ID", true},
+		// WebSocket session headers should NOT be filtered
+		{"websocket micro-ws-session-id", "micro-ws-session-id", false},
+		{"websocket micro-ws-server-id", "micro-ws-server-id", false},
 
-		// Micro namespace and trace headers should propagate
-		{"micro namespace", headers.Namespace, true},
-		{"micro span id", headers.SpanID, true},
-		{"micro trace id", headers.TraceIDKey, true},
-
-		// WebSocket session headers should propagate
-		{"websocket micro-ws-session-id", "micro-ws-session-id", true},
-		{"websocket micro-ws-server-id", "micro-ws-server-id", true},
-		{"websocket case insensitive", "Micro-WS-Session-ID", true},
-
-		// Unknown Micro- headers should not propagate
+		// Unknown Micro- headers should NOT be filtered (let application decide)
 		{"unknown micro header", "Micro-Unknown", false},
-
-		// X-Forwarded headers should not propagate
-		{"forwarded X-Forwarded-For", "X-Forwarded-For", false},
-		{"forwarded X-Real-IP", "X-Real-IP", false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ShouldPropagate(tt.key)
-			if result != tt.expected {
-				t.Errorf("ShouldPropagate(%q) = %v, want %v", tt.key, result, tt.expected)
+			result := ShouldFilterFrameworkHeader(tt.key)
+			if result != tt.shouldFilter {
+				t.Errorf("ShouldFilterFrameworkHeader(%q) = %v, want %v", tt.key, result, tt.shouldFilter)
 			}
 		})
 	}
 }
 
-func TestFilterForwardHeaders(t *testing.T) {
+func TestFilterFrameworkHeaders(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    Metadata
@@ -101,89 +92,93 @@ func TestFilterForwardHeaders(t *testing.T) {
 		{
 			name: "mixed headers",
 			input: Metadata{
-				"Authorization":   "Bearer token123",
-				"X-Request-ID":    "req-123",
-				"Connection":      "keep-alive",
-				"Local":           "127.0.0.1:8080",
-				"Micro-Service":   "test.service",
-				"Micro-Topic":     "test.topic",
-				"Content-Type":    "application/json",
-				"X-Custom-Header": "custom-value",
-				"Micro-Namespace": "production",
-				"X-Forwarded-For": "10.0.0.1",
+				"Authorization":     "Bearer token123",
+				"X-Request-ID":      "req-123",
+				"Connection":        "keep-alive",
+				"Local":             "127.0.0.1:8080",
+				"Micro-Service":     "test.service",
+				"Micro-Topic":       "test.topic",
+				"Content-Type":      "application/json",
+				"X-Custom-Header":   "custom-value",
+				"Micro-Namespace":   "production",
+				"X-Forwarded-For":   "10.0.0.1",
+				"User-Agent":        "test-client/1.0",
+				"micro-ws-session-id": "session-123",
 			},
 			expected: map[string]string{
-				"Authorization":   "Bearer token123",
-				"X-Request-ID":    "req-123",
-				"Content-Type":    "application/json",
-				"X-Custom-Header": "custom-value",
-				"Micro-Namespace": "production",
+				"Authorization":       "Bearer token123",
+				"X-Request-ID":        "req-123",
+				"Content-Type":        "application/json",
+				"X-Custom-Header":     "custom-value",
+				"Micro-Namespace":     "production",
+				"X-Forwarded-For":     "10.0.0.1",
+				"User-Agent":          "test-client/1.0",
+				"micro-ws-session-id": "session-123",
 			},
 		},
 		{
-			name: "tracing headers",
+			name: "only framework headers",
 			input: Metadata{
-				"X-Trace-ID":      "trace-123",
-				"X-B3-TraceId":    "b3-trace-123",
-				"X-B3-SpanId":     "b3-span-123",
-				"Uber-Trace-Id":   "uber-trace-123",
-				"Jaeger-Debug-Id": "jaeger-debug-123",
 				"Connection":      "close",
+				"Micro-Service":   "test.service",
+				"Micro-Method":    "TestMethod",
+				"Micro-Topic":     "test.topic",
+				"Local":           "127.0.0.1:8080",
+				"Remote":          "192.168.1.1:12345",
 			},
-			expected: map[string]string{
-				"X-Trace-ID":      "trace-123",
-				"X-B3-TraceId":    "b3-trace-123",
-				"X-B3-SpanId":     "b3-span-123",
-				"Uber-Trace-Id":   "uber-trace-123",
-				"Jaeger-Debug-Id": "jaeger-debug-123",
-			},
+			expected: map[string]string{},
 		},
 		{
-			name: "websocket headers",
+			name: "client info and tracing headers",
 			input: Metadata{
-				"Authorization":       "Bearer token123",
-				"micro-ws-session-id": "session-abc-123",
-				"micro-ws-server-id":  "ws-server-01",
-				"Connection":          "upgrade",
-				"Micro-Service":       "websocket.service",
-				"X-Request-ID":        "req-456",
+				"X-Forwarded-For":   "203.0.113.1",
+				"X-Real-IP":         "203.0.113.1",
+				"X-Forwarded-Host":  "example.com",
+				"X-Forwarded-Proto": "https",
+				"X-Trace-ID":        "trace-123",
+				"Authorization":     "Bearer token456",
+				"Micro-Service":     "gateway.service",
 			},
 			expected: map[string]string{
-				"Authorization":       "Bearer token123",
-				"micro-ws-session-id": "session-abc-123",
-				"micro-ws-server-id":  "ws-server-01",
-				"X-Request-ID":        "req-456",
+				"X-Forwarded-For":   "203.0.113.1",
+				"X-Real-IP":         "203.0.113.1",
+				"X-Forwarded-Host":  "example.com",
+				"X-Forwarded-Proto": "https",
+				"X-Trace-ID":        "trace-123",
+				"Authorization":     "Bearer token456",
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := FilterForwardHeaders(tt.input)
+			result := FilterFrameworkHeaders(tt.input)
 
 			if tt.expected == nil {
 				if result != nil {
-					t.Errorf("FilterForwardHeaders() = %v, want nil", result)
+					t.Errorf("FilterFrameworkHeaders() = %v, want nil", result)
 				}
 				return
 			}
 
 			if len(result) != len(tt.expected) {
-				t.Errorf("FilterForwardHeaders() length = %d, want %d", len(result), len(tt.expected))
+				t.Errorf("FilterFrameworkHeaders() length = %d, want %d", len(result), len(tt.expected))
+				t.Errorf("Got: %+v", result)
+				t.Errorf("Expected: %+v", tt.expected)
 			}
 
 			for key, expectedValue := range tt.expected {
 				if actualValue, exists := result[key]; !exists {
-					t.Errorf("FilterForwardHeaders() missing key %q", key)
+					t.Errorf("FilterFrameworkHeaders() missing key %q", key)
 				} else if actualValue != expectedValue {
-					t.Errorf("FilterForwardHeaders()[%q] = %q, want %q", key, actualValue, expectedValue)
+					t.Errorf("FilterFrameworkHeaders()[%q] = %q, want %q", key, actualValue, expectedValue)
 				}
 			}
 
 			// Check for unexpected keys
 			for key := range result {
 				if _, expected := tt.expected[key]; !expected {
-					t.Errorf("FilterForwardHeaders() unexpected key %q with value %q", key, result[key])
+					t.Errorf("FilterFrameworkHeaders() unexpected key %q with value %q", key, result[key])
 				}
 			}
 		})
@@ -215,19 +210,21 @@ func TestFilterIncomingHeaders(t *testing.T) {
 			},
 		},
 		{
-			name: "preserve all non-hop-by-hop headers",
+			name: "preserve all non-hop-by-hop headers including framework headers",
 			input: Metadata{
 				"Local":             "127.0.0.1:8080",
 				"Remote":            "192.168.1.100:12345",
 				"Micro-Service":     "test.service",
 				"X-Request-ID":      "req-123",
 				"Transfer-Encoding": "chunked",
+				"X-Forwarded-For":   "10.0.0.1",
 			},
 			expected: map[string]string{
-				"Local":         "127.0.0.1:8080",
-				"Remote":        "192.168.1.100:12345",
-				"Micro-Service": "test.service",
-				"X-Request-ID":  "req-123",
+				"Local":           "127.0.0.1:8080",
+				"Remote":          "192.168.1.100:12345",
+				"Micro-Service":   "test.service",
+				"X-Request-ID":    "req-123",
+				"X-Forwarded-For": "10.0.0.1",
 			},
 		},
 	}
@@ -267,35 +264,40 @@ func TestFilterIncomingHeaders(t *testing.T) {
 
 func TestCallChainScenario(t *testing.T) {
 	// Simulate A -> B -> C call chain
-	// Service A sends request to B, B forwards some headers to C
+	// Service A (API Gateway) sends request to B, B forwards headers to C
 
-	// Original headers from service A
+	// Original headers from external client through API gateway
 	originalHeaders := Metadata{
 		"Authorization":     "Bearer token123",
 		"X-Request-ID":      "req-abc-123",
+		"X-Forwarded-For":   "203.0.113.1",
+		"X-Real-IP":         "203.0.113.1",
 		"Content-Type":      "application/json",
-		"User-Agent":        "service-a/1.0",
+		"User-Agent":        "Mozilla/5.0",
 		"X-Custom-Business": "business-value",
 	}
 
-	// Service B receives and processes these headers
+	// Service B receives these headers
 	incomingFiltered := FilterIncomingHeaders(originalHeaders)
 
-	// Service B adds local information
+	// Service B adds local information (added by framework)
 	serviceB_Context := Copy(incomingFiltered)
 	serviceB_Context["Local"] = "127.0.0.1:8081"
 	serviceB_Context["Remote"] = "127.0.0.1:8080"
 	serviceB_Context["Micro-Service"] = "service.b"
+	serviceB_Context["Micro-Method"] = "Handler"
 
-	// Service B makes call to C, filtering headers for forward propagation
-	forwardToC := FilterForwardHeaders(serviceB_Context)
+	// Service B makes call to C, filtering framework headers
+	forwardToC := FilterFrameworkHeaders(serviceB_Context)
 
-	// Verify the call chain behavior
+	// Verify: all application headers should be forwarded, framework headers filtered
 	expectedForwardToC := map[string]string{
 		"Authorization":     "Bearer token123",
 		"X-Request-ID":      "req-abc-123",
+		"X-Forwarded-For":   "203.0.113.1",
+		"X-Real-IP":         "203.0.113.1",
 		"Content-Type":      "application/json",
-		"User-Agent":        "service-a/1.0",
+		"User-Agent":        "Mozilla/5.0",
 		"X-Custom-Business": "business-value",
 	}
 
@@ -313,11 +315,19 @@ func TestCallChainScenario(t *testing.T) {
 		}
 	}
 
-	// Verify that Local, Remote, and Micro-Service are not forwarded
-	forbiddenKeys := []string{"Local", "Remote", "Micro-Service"}
+	// Verify that framework headers are filtered
+	forbiddenKeys := []string{"Local", "Remote", "Micro-Service", "Micro-Method"}
 	for _, key := range forbiddenKeys {
 		if _, exists := forwardToC[key]; exists {
 			t.Errorf("Forward to C should not contain key %q, but it does with value %q", key, forwardToC[key])
+		}
+	}
+
+	// Verify that client info headers are preserved throughout the chain
+	clientInfoKeys := []string{"X-Forwarded-For", "X-Real-IP"}
+	for _, key := range clientInfoKeys {
+		if _, exists := forwardToC[key]; !exists {
+			t.Errorf("Forward to C must contain client info key %q for tracing original client", key)
 		}
 	}
 }
