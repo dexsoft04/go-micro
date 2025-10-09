@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/tls"
 	"net"
-	"time"
 
 	"go-micro.dev/v5/cmd"
 	"go-micro.dev/v5/transport"
@@ -14,7 +13,6 @@ import (
 	mls "go-micro.dev/v5/util/tls"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/keepalive"
 
 	pb "go-micro.dev/v5/transport/grpc/proto"
 )
@@ -103,11 +101,6 @@ func (t *grpcTransport) Dial(addr string, opts ...transport.DialOption) (transpo
 
 	options := []grpc.DialOption{
 		grpc.WithTimeout(dopts.Timeout),
-		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:                30 * time.Second, // send pings every 30 seconds if there is no activity
-			Timeout:             10 * time.Second, // wait 10 seconds for ping ack before considering the connection dead
-			PermitWithoutStream: true,             // send pings even without active streams
-		}),
 	}
 
 	if t.opts.Secure || t.opts.TLSConfig != nil {
