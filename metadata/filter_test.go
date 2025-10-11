@@ -262,6 +262,52 @@ func TestFilterIncomingHeaders(t *testing.T) {
 	}
 }
 
+func TestRequiredBusinessHeaders(t *testing.T) {
+	// Headers from header.txt that MUST be passed through (not filtered)
+	requiredHeaders := []string{
+		"igs-user-id",
+		"user-authorization",
+		"user-token",
+		"url",
+		"api",
+		"mcb-authorization",
+		"x-signature",
+		"password",
+		"Password",
+		"PASSWORD",
+		"x-channel",
+		"micro-ws-session-id",
+		"micro-ws-server-id",
+		"mcb-openid",
+		"mcb-uuid",
+		"mcb-gamegid",
+		"mcb-plataid",
+	}
+
+	for _, header := range requiredHeaders {
+		t.Run(header, func(t *testing.T) {
+			shouldFilter := ShouldFilterFrameworkHeader(header)
+			if shouldFilter {
+				t.Errorf("Required business header %q should NOT be filtered, but it will be", header)
+			}
+		})
+	}
+
+	// Also test in FilterFrameworkHeaders context
+	testMd := make(Metadata)
+	for _, header := range requiredHeaders {
+		testMd[header] = "test-value"
+	}
+
+	filtered := FilterFrameworkHeaders(testMd)
+
+	for _, header := range requiredHeaders {
+		if _, exists := filtered[header]; !exists {
+			t.Errorf("Required business header %q was filtered out but should be preserved", header)
+		}
+	}
+}
+
 func TestCallChainScenario(t *testing.T) {
 	// Simulate A -> B -> C call chain
 	// Service A (API Gateway) sends request to B, B forwards headers to C
