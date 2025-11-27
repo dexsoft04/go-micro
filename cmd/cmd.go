@@ -3,7 +3,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/philchia/agollo/v4"
 	"github.com/zigo2048/mcbeam-common-lib/common/metrics"
 	"github.com/zigo2048/mcbeam-common-lib/plugins/config/apollo/v3"
 	"github.com/zigo2048/mcbeam-common-lib/plugins/prometheus/v3"
@@ -799,7 +798,7 @@ func (c *cmd) Before(ctx *cli.Context) error {
 
 	// Initialize config.DefaultConfig for Apollo configuration if needed
 	if config.DefaultConfig == nil && shouldInitializeApollo() {
-		config.DefaultConfig = apollo.NewConfig(apollo.WithConfig(&agollo.Conf{
+		config.DefaultConfig = apollo.NewConfig(apollo.WithConfig(&apollo.Conf{
 			AppID:          os.Getenv("MICRO_NAMESPACE"),
 			Cluster:        "default",
 			NameSpaceNames: []string{getNamespace()},

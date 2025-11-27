@@ -41,6 +41,7 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/apolloconfig/agollo/v4 v4.4.0 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/bytedance/sonic v1.12.8 // indirect
 	github.com/bytedance/sonic/loader v0.2.3 // indirect
@@ -57,6 +58,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-rootcerts v1.0.2 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/serf v0.10.1 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.3 // indirect
@@ -68,6 +70,7 @@ require (
 	github.com/jackc/puddle v1.3.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/micro/plugins/v5/wrapper/trace/opentelemetry v1.0.2 // indirect
@@ -75,7 +78,13 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/nats-io/jwt/v2 v2.7.4 // indirect
+	github.com/pelletier/go-toml v1.9.3 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
+	github.com/spf13/afero v1.6.0 // indirect
+	github.com/spf13/jwalterweatherman v1.1.0 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
+	github.com/spf13/viper v1.8.1 // indirect
+	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.38.0 // indirect
@@ -85,6 +94,7 @@ require (
 	golang.org/x/time v0.12.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250804133106-a7a43d27e69b // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250804133106-a7a43d27e69b // indirect
+	gopkg.in/ini.v1 v1.62.0 // indirect
 )
 
 require (
@@ -131,10 +141,10 @@ require (
 // zigo2048
 require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
-	github.com/zigo2048/mcbeam-common-lib/common/config v0.0.0-20250125150457-f9b5b06e3326
+	github.com/zigo2048/mcbeam-common-lib/common/config v0.0.0-20251127041323-b70eb8f97b77
 	github.com/zigo2048/mcbeam-common-lib/common/metrics v0.0.0-20250125150457-f9b5b06e3326
 	github.com/zigo2048/mcbeam-common-lib/common/uauth v0.0.0-20250125150457-f9b5b06e3326 // indirect
 	github.com/zigo2048/mcbeam-common-lib/common/wrapper/apiheader v0.0.0-20250125150457-f9b5b06e3326
 	github.com/zigo2048/mcbeam-common-lib/common/wrapper/wrapper v0.0.0-20250125150457-f9b5b06e3326
-	github.com/zigo2048/mcbeam-common-lib/plugins/config/apollo/v3 v3.0.0-20250125150457-f9b5b06e3326
+	github.com/zigo2048/mcbeam-common-lib/plugins/config/apollo/v3 v3.0.0-20251127072854-6241ac0dfa23
 )
