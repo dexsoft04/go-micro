@@ -1026,6 +1026,9 @@ func getNamespace() string {
 	if serverName := os.Getenv("MICRO_SERVER_NAME"); serverName != "" {
 		return serverName + ".yaml"
 	}
+	if serverName := os.Getenv("MICRO_SERVICE_NAME"); serverName != "" {
+		return serverName + ".yaml"
+	}
 	// Fallback to application.yaml if MICRO_SERVER_NAME is not set
 	return "application.yaml"
 }
